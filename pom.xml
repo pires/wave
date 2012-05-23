@@ -1,28 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>org.waveprotocol.box</groupId>
-    <artifactId>wiab</artifactId>
-    <version>0.3-SNAPSHOT</version>
-    <packaging>pom</packaging>
-    <name>wiab</name>
-    <properties>
-        <protobuf.version>2.4.1</protobuf.version>
-        <guava.version>r09</guava.version>
-        <gwt.version>2.4.0</gwt.version>
-        <jetty.version>8.1.3.v20120416</jetty.version>
-    </properties>
-    <modules>
-        <module>proto</module>
-        <module>proto-stringtemplate</module>
-        <module>wave-api</module>
-        <module>model</module>
-        <module>api</module>
-        <module>box</module>
-        <module>util</module>
-        <module>federation</module>
-        <module>common</module>
-        <module>communication</module>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.waveprotocol.box</groupId>
+  <artifactId>wiab</artifactId>
+  <version>0.3-SNAPSHOT</version>
+  <packaging>pom</packaging>
+
+  <name>Wave In A Box</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <java.version>1.6</java.version>
+    <protobuf.version>2.4.1</protobuf.version>
+    <guava.version>12.0</guava.version>
+    <gwt.version>2.4.0</gwt.version>
+    <jetty.version>8.1.3.v20120416</jetty.version>
+  </properties>
+
+  <modules>
+    <module>proto</module>
+    <module>proto-stringtemplate</module>
+    <module>wave-api</module>
+    <module>model</module>
+    <module>box</module>
+    <module>util</module>
+    <module>federation</module>
+    <module>common</module>
+    <module>communication</module>
     <module>concurrencycontrol</module>
     <module>crypto</module>
     <module>diff</module>
@@ -31,93 +36,216 @@
     <module>migration</module>
     <module>client</module>
   </modules>
-    <dependencies>
-        <dependency>
-            <groupId>com.google.collections</groupId>
-            <artifactId>google-collections</artifactId>
-            <version>1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.2.1</version>
-            <type>jar</type>
-        </dependency>
 
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.10</version>
-        </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <version>1.9.0</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>net.oauth.core</groupId>
-            <artifactId>oauth-provider</artifactId>
-            <version>20100527</version>
-        </dependency>
-        <dependency>
-            <groupId>net.oauth.core</groupId>
-            <artifactId>oauth-consumer</artifactId>
-            <version>20100527</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
-            <version>2.0</version>
-            <type>jar</type>
-        </dependency>
-        <dependency>
-            <groupId>com.google.protobuf</groupId>
-            <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
-            <type>jar</type>
-        </dependency>
+  <dependencyManagement>
+    <dependencies>
+      <!-- Java APIs -->
+      <dependency>
+        <groupId>javax.servlet</groupId>
+        <artifactId>servlet-api</artifactId>
+        <version>2.4</version>
+      </dependency>
+      <dependency>
+        <groupId>javax.jdo</groupId>
+        <artifactId>jdo2-api</artifactId>
+        <version>2.2</version>
+      </dependency>
+
+      <!-- Testing -->
+      <dependency>
+        <groupId>junit</groupId>
+        <artifactId>junit</artifactId>
+        <version>3.8.2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mockito</groupId>
+        <artifactId>mockito-all</artifactId>
+        <version>1.9.0</version>
+      </dependency>
+
+      <!-- Google stuff -->
+      <dependency>
+        <groupId>com.google.code.gson</groupId>
+        <artifactId>gson</artifactId>
+        <version>2.2.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.inject</groupId>
+        <artifactId>guice</artifactId>
+        <version>2.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.collections</groupId>
+        <artifactId>google-collections</artifactId>
+        <version>1.0</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>12.0</version>
+      </dependency>
+
+      <!-- GWT -->
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-dev</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gwt</groupId>
+        <artifactId>gwt-user</artifactId>
+        <version>${gwt.version}</version>
+      </dependency>
+
+      <!-- OAuth -->
+      <dependency>
+        <groupId>net.oauth</groupId>
+        <artifactId>oauth-commons</artifactId>
+        <version>20100601</version>
+      </dependency>
+      <dependency>
+        <groupId>net.oauth</groupId>
+        <artifactId>oauth-provider</artifactId>
+        <version>20100601</version>
+      </dependency>
+      <dependency>
+        <groupId>net.oauth</groupId>
+        <artifactId>oauth-consumer</artifactId>
+        <version>20100601</version>
+      </dependency>
+      <dependency>
+        <groupId>net.oauth</groupId>
+        <artifactId>httpclient3</artifactId>
+        <version>20100601</version>
+      </dependency>
+      <dependency>
+        <groupId>net.oauth</groupId>
+        <artifactId>httpclient4</artifactId>
+        <version>20100601</version>
+      </dependency>
+
+      <!-- Protobuf -->
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+
+      <!-- Commons -->
+      <dependency>
+        <groupId>commons-cli</groupId>
+        <artifactId>commons-cli</artifactId>
+        <version>1.2</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-codec</groupId>
+        <artifactId>commons-codec</artifactId>
+        <version>1.6</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-configuration</groupId>
+        <artifactId>commons-configuration</artifactId>
+        <version>1.8</version>
+      </dependency>
+      <dependency>
+        <groupId>commons-httpclient</groupId>
+        <artifactId>commons-httpclient</artifactId>
+        <version>3.1</version>
+      </dependency>
+
+      <!-- Miscellaneous -->
+      <dependency>
+        <groupId>org.jdom</groupId>
+        <artifactId>jdom</artifactId>
+        <version>2.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-core</artifactId>
+        <version>1.3.RC2</version>
+      </dependency>
+      <dependency>
+        <groupId>org.hamcrest</groupId>
+        <artifactId>hamcrest-api</artifactId>
+        <version>1.0</version>
+      </dependency>
     </dependencies>
-    <pluginRepositories>
-        <pluginRepository>
-            <id>protostuff-repo</id>
-            <name>protostuff-repo</name>
-            <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
-        </pluginRepository>
-    </pluginRepositories>
-    <repositories>
-        <repository>
-            <id>mojo-codehaus</id>
-            <name>Mojo Project Repository</name>
-            <url>http://repository.codehaus.org/</url>
-        </repository>
-        <repository>
-            <id>google-releases</id>
-            <name>Google Maven Repository</name>
-            <url>http://oss.sonatype.org/content/repositories/google-releases/
+  </dependencyManagement>
+
+  <build>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>2.3.2</version>
+          <configuration>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
+          </configuration>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>properties-maven-plugin</artifactId>
+          <version>1.0-alpha-2</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-antrun-plugin</artifactId>
+          <version>1.7</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>protostuff-repo</id>
+      <name>protostuff-repo</name>
+      <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <repositories>
+    <repository>
+      <id>mojo-codehaus</id>
+      <name>Mojo Project Repository</name>
+      <url>http://repository.codehaus.org/</url>
+    </repository>
+    <repository>
+      <id>google-releases</id>
+      <name>Google Maven Repository</name>
+      <url>http://oss.sonatype.org/content/repositories/google-releases/
             </url>
-        </repository>
-        <repository>
-            <id>oauth</id>
-            <name>OAuth Repository</name>
-            <url>http://oauth.googlecode.com/svn/code/maven</url>
-        </repository>
-        <!-- Socket.IO -->
-        <repository>
-            <id>mc-snapshot</id>
-            <name>mc-snapshot</name>
-            <url>http://mc-repo.googlecode.com/svn/maven2/snapshots</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-        </repository>
-        <repository>
-            <id>protostuff-repo</id>
-            <name>protostuff-repo</name>
-            <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
-        </repository>
-    </repositories>
+    </repository>
+    <repository>
+      <id>oauth</id>
+      <name>OAuth Repository</name>
+      <url>http://oauth.googlecode.com/svn/code/maven</url>
+    </repository>
+    <!-- Socket.IO -->
+    <repository>
+      <id>mc-snapshot</id>
+      <name>mc-snapshot</name>
+      <url>http://mc-repo.googlecode.com/svn/maven2/snapshots</url>
+      <snapshots>
+        <enabled>true</enabled>
+      </snapshots>
+      <releases>
+        <enabled>false</enabled>
+      </releases>
+    </repository>
+    <repository>
+      <id>protostuff-repo</id>
+      <name>protostuff-repo</name>
+      <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
+    </repository>
+    <repository>
+      <id>wave-local</id>
+      <layout>default</layout>
+      <name>wave local</name>
+      <url>file:///${basedir}/repo/</url>
+    </repository>
+  </repositories>
+
 </project>
