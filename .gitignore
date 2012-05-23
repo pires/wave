@@ -1,4 +1,6 @@
 *.class
+.project
+.classpath
 
 # Package Files #
 *.jar
@@ -8,3 +10,4 @@
 # Temporary Folders #
 gen
 target
+.settings
