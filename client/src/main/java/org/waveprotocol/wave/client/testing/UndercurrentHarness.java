@@ -31,7 +31,6 @@ import org.waveprotocol.wave.client.StageThree;
 import org.waveprotocol.wave.client.StageTwo;
 import org.waveprotocol.wave.client.StageZero;
 import org.waveprotocol.wave.client.Stages;
-import org.waveprotocol.wave.client.account.impl.ProfileManagerImpl;
 import org.waveprotocol.wave.client.common.safehtml.SafeHtmlBuilder;
 import org.waveprotocol.wave.client.common.util.AsyncHolder;
 import org.waveprotocol.wave.client.concurrencycontrol.MuxConnector;
@@ -133,7 +132,7 @@ public class UndercurrentHarness implements EntryPoint {
 
       @Override
       protected AsyncHolder<StageTwo> createStageTwoLoader(StageOne one) {
-        return new StageTwo.DefaultProvider(one, new ProfileManagerImpl("example.com")) {
+        return new StageTwo.DefaultProvider(one, null) {
 
           @Override
           protected void onStageInit() {
@@ -326,13 +325,13 @@ public class UndercurrentHarness implements EntryPoint {
 
     private static void sampleReply(ConversationBlip blip) {
       write(blip);
-      ConversationThread thread = blip.appendInlineReplyThread(8);
+      ConversationThread thread = blip.addReplyThread(8);
       write(thread.appendBlip());
     }
 
     private static void biggerSampleReply(ConversationBlip blip) {
       write(blip);
-      ConversationThread thread = blip.appendReplyThread();
+      ConversationThread thread = blip.addReplyThread();
       sampleReply(thread.appendBlip());
       sampleReply(thread.appendBlip());
       write(thread.appendBlip());

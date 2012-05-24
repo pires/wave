@@ -80,7 +80,7 @@ import org.waveprotocol.wave.model.wave.ParticipantId;
  * Implements structural accessors and mutators for wave-panel views.
  *
  */
-public final class FullStructure implements UpgradeableDomAsViewProvider {
+public class FullStructure implements UpgradeableDomAsViewProvider {
 
   /** Mapping of kinds to types. */
   private static final ReadableStringSet KNOWN_KINDS;
@@ -511,16 +511,23 @@ public final class FullStructure implements UpgradeableDomAsViewProvider {
           DomViewHelper.attachBefore(impl.getParticipantContainer(), impl.getSimpleMenu(), t);
           // Kick Webkit, because of its incremental layout bugs.
           if (UserAgent.isWebkit()) {
+
+            String oldDisplay = impl.getElement().getStyle().getDisplay();
+
             // Erase layout. Querying getOffsetParent() forces layout.
             impl.getElement().getStyle().setDisplay(Display.NONE);
             impl.getElement().getOffsetParent();
+
             // Restore layout.
-            impl.getElement().getStyle().clearDisplay();
+            impl.getElement().getStyle().setProperty("display", oldDisplay);
           }
           return asParticipant(t);
         }
       };
 
+  /** Injected Css resources providing access to style names to apply. */
+  private final CssProvider cssProvider;
+      
   /**
    * Renderer for creating new parts of the DOM. Initially unset, then set once
    * in {@link #setRenderer(DomRenderer)}.
@@ -530,7 +537,8 @@ public final class FullStructure implements UpgradeableDomAsViewProvider {
   /**
    * Creates a view provider/manager/handler/oracle.
    */
-  public FullStructure() {
+  public FullStructure(CssProvider cssProvider) {
+    this.cssProvider = cssProvider;
   }
 
   @Override
@@ -631,62 +639,65 @@ public final class FullStructure implements UpgradeableDomAsViewProvider {
   }
 
   private RootThreadViewImpl<RootThreadDomImpl> asRootThreadUnchecked(Element e) {
-    return e != null ? new RootThreadViewImpl<RootThreadDomImpl>(
-        rootThreadHelper, RootThreadDomImpl.of(e)) : null;
+    return e == null ? null : new RootThreadViewImpl<RootThreadDomImpl>(
+        rootThreadHelper, RootThreadDomImpl.of(e));
   }
 
   private ReplyBoxViewImpl<ReplyBoxDomImpl> asRootThreadIndicatorUnchecked(Element e) {
-    return e != null ? new ReplyBoxViewImpl<ReplyBoxDomImpl>(
-        rootThreadIndicatorHelper, ReplyBoxDomImpl.of(e)) : null;
+    return e == null ? null : new ReplyBoxViewImpl<ReplyBoxDomImpl>(
+        rootThreadIndicatorHelper, ReplyBoxDomImpl.of(e));
   }
 
   private InlineThreadViewImpl<InlineThreadDomImpl> asInlineThreadUnchecked(Element e) {
-    return e != null ? new InlineThreadViewImpl<InlineThreadDomImpl>(
-        inlineThreadHelper, InlineThreadDomImpl.of(e)) : null;
+    return e == null ? null : new InlineThreadViewImpl<InlineThreadDomImpl>(
+        inlineThreadHelper, InlineThreadDomImpl.of(e, cssProvider.getCollapsibleCss()));
   }
 
   private ContinuationIndicatorViewImpl<ContinuationIndicatorDomImpl>
       asContinuationIndicatorUnchecked(Element e) {
-    return e != null ? new ContinuationIndicatorViewImpl<ContinuationIndicatorDomImpl>(
-        inlineThreadIndicatorHelper, ContinuationIndicatorDomImpl.of(e)) : null;
+    return e == null ? null : new ContinuationIndicatorViewImpl<ContinuationIndicatorDomImpl>(
+        inlineThreadIndicatorHelper, ContinuationIndicatorDomImpl.of(e));
   }
 
   private AnchorViewImpl<AnchorDomImpl> asAnchorUnchecked(Element e) {
-    return e != null ? new AnchorViewImpl<AnchorDomImpl>(anchorHelper, AnchorDomImpl.of(e)) : null;
+    return e == null ? null : new AnchorViewImpl<AnchorDomImpl>(
+        anchorHelper, AnchorDomImpl.of(e));
   }
 
   private BlipViewImpl<BlipViewDomImpl> asBlipUnchecked(Element e) {
-    return e != null ? new BlipViewImpl<BlipViewDomImpl>(blipHelper, BlipViewDomImpl.of(e)) : null;
+    return e == null ? null : new BlipViewImpl<BlipViewDomImpl>(
+        blipHelper, BlipViewDomImpl.of(e));
   }
 
   private ParticipantViewImpl<ParticipantNameDomImpl> asParticipantUnchecked(Element e) {
-    return e != null ? new ParticipantViewImpl<ParticipantNameDomImpl>(
-        participantHelper, ParticipantNameDomImpl.of(e)) : null;
+    return e == null ? null : new ParticipantViewImpl<ParticipantNameDomImpl>(
+        participantHelper, ParticipantNameDomImpl.of(e));
   }
 
   private ParticipantsViewImpl<ParticipantsDomImpl> asParticipantsUnchecked(Element e) {
-    return e != null ? new ParticipantsViewImpl<ParticipantsDomImpl>(
-        participantsHelper, ParticipantsDomImpl.of(e)) : null;
+    return e == null ? null : new ParticipantsViewImpl<ParticipantsDomImpl>(
+        participantsHelper, ParticipantsDomImpl.of(e));
   }
 
   private BlipMetaViewImpl<BlipMetaDomImpl> asBlipMetaUnchecked(Element e) {
-    return e != null
-        ? new BlipMetaViewImpl<BlipMetaDomImpl>(metaHelper, BlipMetaDomImpl.of(e)) : null;
+    return e == null ? null : new BlipMetaViewImpl<BlipMetaDomImpl>(
+        metaHelper, BlipMetaDomImpl.of(e, cssProvider.getBlipCss()));
   }
 
   private BlipMenuItemViewImpl<BlipMenuItemDomImpl> asBlipMenuItemUnchecked(Element e) {
-    return e != null ? BlipMenuItemViewImpl.create(menuHelper, BlipMenuItemDomImpl.of(e)) : null;
+    return e == null ? null : BlipMenuItemViewImpl.create(
+        menuHelper, BlipMenuItemDomImpl.of(e, cssProvider.getBlipCss()));
   }
 
   private TopConversationViewImpl<TopConversationDomImpl> asTopConversationUnchecked(Element e) {
-    return e != null ? new TopConversationViewImpl<TopConversationDomImpl>(
-        convHelper, TopConversationDomImpl.of(e)) : null;
+    return e == null ? null : new TopConversationViewImpl<TopConversationDomImpl>(
+        convHelper, TopConversationDomImpl.of(e));
   }
 
   private InlineConversationViewImpl<InlineConversationDomImpl> asInlineConversationUnchecked(
       Element e) {
-    return e != null ? new InlineConversationViewImpl<InlineConversationDomImpl>(
-        inlineConvHelper, InlineConversationDomImpl.of(e)) : null;
+    return e == null ? null : new InlineConversationViewImpl<InlineConversationDomImpl>(
+        inlineConvHelper, InlineConversationDomImpl.of(e, cssProvider.getCollapsibleCss()));
   }
 
   @Override
@@ -781,8 +792,8 @@ public final class FullStructure implements UpgradeableDomAsViewProvider {
   @Override
   public InlineThreadView fromToggle(Element e) {
     Preconditions.checkArgument(e == null || typeOf(e) == Type.TOGGLE);
-    return e != null ? new InlineThreadViewImpl<InlineThreadDomImpl>(
-        inlineThreadHelper, InlineThreadDomImpl.ofToggle(e)) : null;
+    return e == null ? null : new InlineThreadViewImpl<InlineThreadDomImpl>(
+        inlineThreadHelper, InlineThreadDomImpl.ofToggle(e, cssProvider.getCollapsibleCss()));
   }
 
   @Override

@@ -20,6 +20,7 @@ import com.google.gwt.dom.client.Element;
 import com.google.gwt.user.client.Command;
 
 import org.waveprotocol.wave.client.account.ProfileManager;
+import org.waveprotocol.wave.client.account.impl.ProfileManagerImpl;
 import org.waveprotocol.wave.client.common.util.AsyncHolder;
 import org.waveprotocol.wave.client.common.util.ClientPercentEncoderDecoder;
 import org.waveprotocol.wave.client.common.util.CountdownLatch;
@@ -36,12 +37,15 @@ import org.waveprotocol.wave.client.doodad.title.TitleAnnotationHandler;
 import org.waveprotocol.wave.client.editor.content.Registries;
 import org.waveprotocol.wave.client.editor.content.misc.StyleAnnotationHandler;
 import org.waveprotocol.wave.client.gadget.Gadget;
+import org.waveprotocol.wave.client.render.ReductionBasedRenderer;
+import org.waveprotocol.wave.client.render.RenderingRules;
 import org.waveprotocol.wave.client.scheduler.Scheduler.Task;
 import org.waveprotocol.wave.client.scheduler.SchedulerInstance;
 import org.waveprotocol.wave.client.state.BlipReadStateMonitor;
 import org.waveprotocol.wave.client.state.BlipReadStateMonitorImpl;
 import org.waveprotocol.wave.client.state.ThreadReadStateMonitor;
 import org.waveprotocol.wave.client.state.ThreadReadStateMonitorImpl;
+import org.waveprotocol.wave.client.uibuilder.UiBuilder;
 import org.waveprotocol.wave.client.util.ClientFlags;
 import org.waveprotocol.wave.client.wave.InteractiveDocument;
 import org.waveprotocol.wave.client.wave.LazyContentDocument;
@@ -54,7 +58,9 @@ import org.waveprotocol.wave.client.wavepanel.impl.diff.DiffController;
 import org.waveprotocol.wave.client.wavepanel.impl.reader.Reader;
 import org.waveprotocol.wave.client.wavepanel.render.BlipPager;
 import org.waveprotocol.wave.client.wavepanel.render.DocumentRegistries;
-import org.waveprotocol.wave.client.wavepanel.render.FullDomWaveRendererImpl;
+import org.waveprotocol.wave.client.wavepanel.render.FullDomRenderer;
+import org.waveprotocol.wave.client.wavepanel.render.FullDomRenderer.DocRefRenderer;
+import org.waveprotocol.wave.client.wavepanel.render.HtmlDomRenderer;
 import org.waveprotocol.wave.client.wavepanel.render.InlineAnchorLiveRenderer;
 import org.waveprotocol.wave.client.wavepanel.render.LiveConversationViewRenderer;
 import org.waveprotocol.wave.client.wavepanel.render.PagingHandlerProxy;
@@ -79,7 +85,10 @@ import org.waveprotocol.wave.concurrencycontrol.channel.OperationChannelMultiple
 import org.waveprotocol.wave.concurrencycontrol.channel.ViewChannelFactory;
 import org.waveprotocol.wave.concurrencycontrol.channel.ViewChannelImpl;
 import org.waveprotocol.wave.concurrencycontrol.channel.WaveViewService;
+import org.waveprotocol.wave.concurrencycontrol.common.UnsavedDataListener;
 import org.waveprotocol.wave.concurrencycontrol.common.UnsavedDataListenerFactory;
+import org.waveprotocol.wave.model.conversation.ConversationBlip;
+import org.waveprotocol.wave.model.conversation.ConversationThread;
 import org.waveprotocol.wave.model.conversation.ObservableConversationView;
 import org.waveprotocol.wave.model.conversation.WaveBasedConversationView;
 import org.waveprotocol.wave.model.document.indexed.IndexedDocumentImpl;
@@ -100,6 +109,7 @@ import org.waveprotocol.wave.model.supplement.SupplementedWaveImpl.DefaultFollow
 import org.waveprotocol.wave.model.supplement.WaveletBasedSupplement;
 import org.waveprotocol.wave.model.util.FuzzingBackOffScheduler;
 import org.waveprotocol.wave.model.util.FuzzingBackOffScheduler.CollectiveScheduler;
+import org.waveprotocol.wave.model.util.IdentityMap;
 import org.waveprotocol.wave.model.util.Scheduler;
 import org.waveprotocol.wave.model.version.HashedVersion;
 import org.waveprotocol.wave.model.version.HashedVersionFactory;
@@ -151,6 +161,9 @@ public interface StageTwo {
   /** @return the profile manager. */
   ProfileManager getProfileManager();
 
+  /** @return the id generator. */
+  IdGenerator getIdGenerator();
+
   /** @return the communication channel connector. */
   MuxConnector getConnector();
 
@@ -171,6 +184,9 @@ public interface StageTwo {
 
   /** @return stage one. */
   StageOne getStageOne();
+
+  /** @return Reader. */
+  Reader getReader();
 
   /**
    * Default implementation of the stage two configuration. Each component is
@@ -220,13 +236,13 @@ public interface StageTwo {
     private BlipQueueRenderer queueRenderer;
     private ModelAsViewProvider modelAsView;
     private DiffController diffController;
-    
- // shared across other client components
-    private final ProfileManager profiles;
+    private Reader reader;
 
-    public DefaultProvider(StageOne stageOne, ProfileManager profiles) {
+    private final UnsavedDataListener unsavedDataListener;
+
+    public DefaultProvider(StageOne stageOne, UnsavedDataListener unsavedDataListener) {
       this.stageOne = stageOne;
-      this.profiles = profiles;
+      this.unsavedDataListener = unsavedDataListener;
     }
 
     /**
@@ -313,7 +329,8 @@ public interface StageTwo {
       return signedInuser == null ? signedInuser = createSignedInUser() : signedInuser;
     }
 
-    protected final IdGenerator getIdGenerator() {
+    @Override
+    public final IdGenerator getIdGenerator() {
       return idGenerator == null ? idGenerator = createIdGenerator() : idGenerator;
     }
 
@@ -370,6 +387,11 @@ public interface StageTwo {
     @Override
     public final DiffController getDiffController() {
       return diffController == null ? diffController = createDiffController() : diffController;
+    }
+
+    @Override
+    public final Reader getReader() {
+      return reader;
     }
 
     /** @return the id mangler for model objects. Subclasses may override. */
@@ -507,7 +529,19 @@ public interface StageTwo {
           .build();
 
       ViewChannelFactory viewFactory = ViewChannelImpl.factory(createWaveViewService(), logger);
-      UnsavedDataListenerFactory unsyncedListeners = UnsavedDataListenerFactory.NONE;
+      UnsavedDataListenerFactory unsyncedListeners = new UnsavedDataListenerFactory() {
+
+        private final UnsavedDataListener listener = unsavedDataListener;
+
+        @Override
+        public UnsavedDataListener create(WaveletId waveletId) {
+          return listener;
+        }
+
+        @Override
+        public void destroy(WaveletId waveletId) {
+        }
+      };
 
       WaveletId udwId = getIdGenerator().newUserDataWaveletId(getSignedInUser().getAddress());
       final IdFilter filter = IdFilter.of(Collections.singleton(udwId),
@@ -546,7 +580,7 @@ public interface StageTwo {
 
     /** @return the manager of user identities. Subclasses may override. */
     protected ProfileManager createProfileManager() {
-      return profiles;
+      return new ProfileManagerImpl();
     }
 
     /** @return the renderer of intrinsic blip state. Subclasses may override. */
@@ -595,9 +629,22 @@ public interface StageTwo {
     }
 
     protected DomRenderer createRenderer() {
-      return FullDomWaveRendererImpl.create(getConversations(), getProfileManager(),
-          getBlipDetailer(), getViewIdMapper(), getBlipQueue(), getThreadReadStateMonitor(),
-          createViewFactories());
+      final BlipQueueRenderer pager = getBlipQueue();
+      DocRefRenderer docRenderer = new DocRefRenderer() {
+        @Override
+        public UiBuilder render(
+            ConversationBlip blip, IdentityMap<ConversationThread, UiBuilder> replies) {
+          // Documents are rendered blank, and filled in later when
+          // they get paged in.
+          pager.add(blip);
+          return DocRefRenderer.EMPTY.render(blip, replies);
+        }
+      };
+
+      RenderingRules<UiBuilder> rules = new FullDomRenderer(
+          getBlipDetailer(), docRenderer, getProfileManager(),
+          getViewIdMapper(), createViewFactories(), getThreadReadStateMonitor());
+      return new HtmlDomRenderer(ReductionBasedRenderer.of(rules, getConversations()));
     }
 
     protected DiffController createDiffController() {
@@ -629,16 +676,20 @@ public interface StageTwo {
           DiffDeleteRenderer.register(r.getElementHandlerRegistry());
           StyleAnnotationHandler.register(r);
           TitleAnnotationHandler.register(r);
-          LinkAnnotationHandler.register(r, new LinkAttributeAugmenter() {
-            @Override
-            public Map<String, String> augment(Map<String, Object> annotations, boolean isEditing,
-                Map<String, String> current) {
-              return current;
-            }
-          });
+          LinkAnnotationHandler.register(r, createLinkAttributeAugmenter());
           SelectionAnnotationHandler.register(r, getSessionId(), getProfileManager());
         }
       });
+    }
+
+    protected LinkAttributeAugmenter createLinkAttributeAugmenter() {
+      return new LinkAttributeAugmenter() {
+        @Override
+        public Map<String, String> augment(Map<String, Object> annotations, boolean isEditing,
+            Map<String, String> current) {
+          return current;
+        }
+      };
     }
 
     protected ModelAsViewProvider createModelAsViewProvider() {
@@ -685,7 +736,7 @@ public interface StageTwo {
      */
     protected void installFeatures() {
       // Eagerly install some features.
-      Reader.install(getSupplement(), stageOne.getFocusFrame(), getModelAsViewProvider(),
+      reader = Reader.install(getSupplement(), stageOne.getFocusFrame(), getModelAsViewProvider(),
           getDocumentRegistry());
     }
   }

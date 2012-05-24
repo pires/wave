@@ -30,10 +30,12 @@ import org.waveprotocol.wave.client.wavepanel.impl.edit.Actions;
 import org.waveprotocol.wave.client.wavepanel.impl.edit.ActionsImpl;
 import org.waveprotocol.wave.client.wavepanel.impl.edit.EditController;
 import org.waveprotocol.wave.client.wavepanel.impl.edit.EditSession;
+import org.waveprotocol.wave.client.wavepanel.impl.edit.KeepFocusInView;
 import org.waveprotocol.wave.client.wavepanel.impl.edit.ParticipantController;
 import org.waveprotocol.wave.client.wavepanel.impl.focus.FocusFramePresenter;
 import org.waveprotocol.wave.client.wavepanel.impl.indicator.ReplyIndicatorController;
 import org.waveprotocol.wave.client.wavepanel.impl.menu.MenuController;
+import org.waveprotocol.wave.client.wavepanel.impl.title.WaveTitleHandler;
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.EditToolbar;
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.ToolbarSwitcher;
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.ViewToolbar;
@@ -41,6 +43,7 @@ import org.waveprotocol.wave.client.wavepanel.view.dom.ModelAsViewProvider;
 import org.waveprotocol.wave.client.wavepanel.view.dom.full.BlipQueueRenderer;
 import org.waveprotocol.wave.client.widget.popup.PopupChromeFactory;
 import org.waveprotocol.wave.client.widget.popup.PopupFactory;
+import org.waveprotocol.wave.model.conversation.ConversationView;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 
 /**
@@ -156,13 +159,29 @@ public interface StageThree {
     }
 
     protected EditToolbar createEditToolbar() {
-      return EditToolbar.create(getStageTwo().getSignedInUser());
+      return EditToolbar.create(getStageTwo().getSignedInUser(), stageTwo.getIdGenerator(),
+          stageTwo.getWave().getWaveId());
     }
 
     protected ViewToolbar createViewToolbar() {
-      return ViewToolbar.create();
+      ModelAsViewProvider views = stageTwo.getModelAsViewProvider();
+      ConversationView wave = stageTwo.getConversations();
+      return ViewToolbar.create(stageTwo.getStageOne().getFocusFrame(), views, wave,
+          stageTwo.getReader());
     }
 
+    protected String getLocalDomain() {
+      return null;
+    }
+
+    /**
+     * Installs parts of stage three that have dependencies.
+     * <p>
+     * This method is only called once all asynchronously loaded components of
+     * stage three are ready.
+     * <p>
+     * Subclasses may override this to change the set of installed features.
+     */
     protected void install() {
       EditorStaticDeps.setPopupProvider(PopupFactory.getProvider());
       EditorStaticDeps.setPopupChromeProvider(PopupChromeFactory.getProvider());
@@ -179,9 +198,11 @@ public interface StageThree {
       MenuController.install(actions, panel);
       ToolbarSwitcher.install(stageTwo.getStageOne().getWavePanel(), getEditSession(),
           getViewToolbar(), getEditToolbar());
+      WaveTitleHandler.install(edit, models);
       ReplyIndicatorController.install(actions, edit, panel);
       EditController.install(focus, actions, panel);
-      ParticipantController.install(panel, models, profiles);
+      ParticipantController.install(panel, models, profiles, getLocalDomain());
+      KeepFocusInView.install(edit, panel);
       stageTwo.getDiffController().upgrade(edit);
     }
   }

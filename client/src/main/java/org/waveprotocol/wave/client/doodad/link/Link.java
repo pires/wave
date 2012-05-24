@@ -39,6 +39,14 @@ public final class Link {
 
   private static final ReadableStringSet WEB_SCHEMES = CollectionUtils.newStringSet(
       "http", "https", "ftp", "mailto");
+  /**
+   * http://en.wikipedia.org/wiki/Fragment_identifier
+   * http://tools.ietf.org/html/rfc3986#section-3.5
+   * fragment    = *( pchar / "/" / "?" )
+   */
+  private static final String COMMON_REGEX = "[\\w\\-:@!\\$&\'\\(\\)\\*\\+,;=\\/\\?\\.]+";
+  private static final String FRAGMENT_URI_REGEX = "#(" + COMMON_REGEX + "|$)";
+  private static final String QUERY_REGEX = "(\\?" + COMMON_REGEX +"|)($|"+ FRAGMENT_URI_REGEX + ")";
 
   private static final String INVALID_LINK_MSG =
       "Invalid link. Should either be a web url\n" +
@@ -59,15 +67,26 @@ public final class Link {
 
   /** Key prefix */
   public static final String PREFIX = "link";
+
+  /** The primary key used for links. This is the same as the prefix on its own. */
+  public static final String KEY = PREFIX;
+
   /** Key for 'linky' agent created links. */
   public static final String AUTO_KEY = PREFIX + "/auto";
-  /** Key for manually created links. */
+
+  /**
+   * Key for manually created links.
+   * @deprecated use the "link" key. Delete this after old links have been cleaned up.
+   */
+  @Deprecated
   public static final String MANUAL_KEY = PREFIX + "/manual";
   /**
    * Key for wave links.
    *
-   * @deprecated Use link/manual with value of the form:
+   * @deprecated Use the key "link" with value of the form:
    *             wave://example.com/w+1234/~/conv+root/b+abcd
+   *
+   *             Delete this after old links have been cleaned up.
    */
   @Deprecated
   public static final String WAVE_KEY = PREFIX + "/wave";
@@ -78,7 +97,7 @@ public final class Link {
    * should expose LINK_KEYS as a set, and have ORDERED_LINK_KEYS for code that
    * relies on specific ordering.
    */
-  public static final String[] LINK_KEYS = {AUTO_KEY, MANUAL_KEY, WAVE_KEY};
+  public static final String[] LINK_KEYS = {KEY, AUTO_KEY, MANUAL_KEY, WAVE_KEY};
 
   private Link() {
   }
@@ -114,7 +133,7 @@ public final class Link {
       }
     }
 
-    assert EscapeUtils.extractScheme(uri) != null;
+    assert uri.matches(QUERY_REGEX) || EscapeUtils.extractScheme(uri) != null;
 
     // Otherwise, just return the given link.
     return uri;
@@ -134,7 +153,7 @@ public final class Link {
     String scheme = parts != null ? parts[0] : null;
 
     // Normal web url
-    if (scheme != null && WEB_SCHEMES.contains(scheme)) {
+    if (rawLinkValue.matches(QUERY_REGEX) || (scheme != null && WEB_SCHEMES.contains(scheme))) {
       return rawLinkValue;
     }
 

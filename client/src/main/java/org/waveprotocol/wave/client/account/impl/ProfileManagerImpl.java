@@ -17,11 +17,7 @@
 
 package org.waveprotocol.wave.client.account.impl;
 
-import org.waveprotocol.wave.client.account.ProfileListener;
 import org.waveprotocol.wave.client.account.ProfileManager;
-import org.waveprotocol.wave.model.util.CollectionUtils;
-import org.waveprotocol.wave.model.util.CopyOnWriteSet;
-import org.waveprotocol.wave.model.util.StringMap;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 
 /**
@@ -29,14 +25,9 @@ import org.waveprotocol.wave.model.wave.ParticipantId;
  *
  * @author kalman@google.com (Benjamin Kalman)
  */
-public final class ProfileManagerImpl implements ProfileManager {
+public final class ProfileManagerImpl extends AbstractProfileManager<ProfileImpl> {
 
-  private final StringMap<ProfileImpl> profiles = CollectionUtils.createStringMap();
-  private final CopyOnWriteSet<ProfileListener> listeners = CopyOnWriteSet.create();
-  private final String localDomain;
-
-  public ProfileManagerImpl(String localDomain) {
-    this.localDomain = localDomain;
+  public ProfileManagerImpl() {
   }
 
   @Override
@@ -46,33 +37,6 @@ public final class ProfileManagerImpl implements ProfileManager {
       profile = new ProfileImpl(this, participantId);
       profiles.put(participantId.getAddress(), profile);
     }
-
     return profile;
-  }
-
-  @Override
-  public boolean shouldIgnore(ParticipantId participant) {
-    return false;
-  }
-
-  @Override
-  public void addListener(ProfileListener listener) {
-    listeners.add(listener);
-  }
-
-  @Override
-  public void removeListener(ProfileListener listener) {
-    listeners.remove(listener);
-  }
-
-  void fireOnUpdated(ProfileImpl profile) {
-    for (ProfileListener listener : listeners) {
-      listener.onProfileUpdated(profile);
-    }
-  }
-
-  @Override
-  public String getLocalDomain() {
-    return localDomain;
   }
 }

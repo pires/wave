@@ -22,178 +22,63 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
 import com.google.gwt.dom.client.Style.Unit;
-import com.google.gwt.user.client.Window;
+import com.google.gwt.http.client.URL;
 
-import org.waveprotocol.wave.client.common.util.WaveRefConstants;
 import org.waveprotocol.wave.client.doodad.link.Link;
-import org.waveprotocol.wave.client.doodad.link.Link.InvalidLinkException;
 import org.waveprotocol.wave.client.editor.Editor;
 import org.waveprotocol.wave.client.editor.EditorContext;
-import org.waveprotocol.wave.client.editor.EditorUpdateEvent;
-import org.waveprotocol.wave.client.editor.EditorUpdateEvent.EditorUpdateListener;
+import org.waveprotocol.wave.client.editor.EditorContextAdapter;
+import org.waveprotocol.wave.client.editor.content.CMutableDocument;
 import org.waveprotocol.wave.client.editor.content.ContentElement;
 import org.waveprotocol.wave.client.editor.content.ContentNode;
 import org.waveprotocol.wave.client.editor.content.misc.StyleAnnotationHandler;
 import org.waveprotocol.wave.client.editor.content.paragraph.Paragraph;
 import org.waveprotocol.wave.client.editor.content.paragraph.Paragraph.LineStyle;
+import org.waveprotocol.wave.client.editor.toolbar.ButtonUpdater;
+import org.waveprotocol.wave.client.editor.toolbar.ParagraphApplicationController;
+import org.waveprotocol.wave.client.editor.toolbar.ParagraphTraversalController;
+import org.waveprotocol.wave.client.editor.toolbar.TextSelectionController;
 import org.waveprotocol.wave.client.editor.util.EditorAnnotationUtil;
 import org.waveprotocol.wave.client.gadget.GadgetXmlUtil;
-import org.waveprotocol.wave.client.scheduler.BucketRateLimiter;
-import org.waveprotocol.wave.client.scheduler.CancellableCommand;
-import org.waveprotocol.wave.client.scheduler.SchedulerInstance;
-import org.waveprotocol.wave.client.scheduler.TimerService;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.attachment.AttachmentPopupWidget;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.GadgetInfoProviderImpl;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.GadgetSelectorWidget;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.GwtGadgetInfoParser;
+import org.waveprotocol.wave.client.wavepanel.view.AttachmentPopupView;
+import org.waveprotocol.wave.client.wavepanel.view.AttachmentPopupView.Listener;
+import org.waveprotocol.wave.client.widget.popup.UniversalPopup;
 import org.waveprotocol.wave.client.widget.toolbar.SubmenuToolbarView;
 import org.waveprotocol.wave.client.widget.toolbar.ToolbarButtonViewBuilder;
 import org.waveprotocol.wave.client.widget.toolbar.ToolbarView;
 import org.waveprotocol.wave.client.widget.toolbar.ToplevelToolbarWidget;
 import org.waveprotocol.wave.client.widget.toolbar.buttons.ToolbarClickButton;
 import org.waveprotocol.wave.client.widget.toolbar.buttons.ToolbarToggleButton;
-import org.waveprotocol.wave.model.document.indexed.LocationMapper;
+import org.waveprotocol.wave.media.model.AttachmentIdGenerator;
+import org.waveprotocol.wave.media.model.AttachmentIdGeneratorImpl;
 import org.waveprotocol.wave.model.document.util.FocusedRange;
 import org.waveprotocol.wave.model.document.util.LineContainers;
-import org.waveprotocol.wave.model.document.util.Range;
+import org.waveprotocol.wave.model.document.util.Point;
 import org.waveprotocol.wave.model.document.util.XmlStringBuilder;
-import org.waveprotocol.wave.model.util.CopyOnWriteSet;
+import org.waveprotocol.wave.model.id.IdGenerator;
+import org.waveprotocol.wave.model.id.WaveId;
 import org.waveprotocol.wave.model.wave.ParticipantId;
-
-import java.util.Iterator;
+import org.waveprotocol.wave.model.waveref.WaveRef;
+import org.waveprotocol.wave.util.escapers.GwtWaverefEncoder;
 
 /**
- * Attaches editors to a toolbar.
+ * Attaches actions that can be performed in a Wave's "edit mode" to a toolbar.
+ * <p>
+ * Also constructs an initial set of such actions.
  *
  * @author kalman@google.com (Benjamin Kalman)
  */
-public class EditToolbar implements EditorUpdateListener {
+public class EditToolbar {
 
   /**
    * Handler for click buttons added with {@link EditToolbar#addClickButton}.
    */
   public interface ClickHandler {
     void onClicked(EditorContext context);
-  }
-
-  /** The default gadget URL used in the insert-gadget prompt */
-  private static final String YES_NO_MAYBE_GADGET =
-      "http://wave-api.appspot.com/public/gadgets/areyouin/gadget.xml";
-
-  /** Something that needs updating. */
-  interface Controller {
-    void update(Range selectionRange);
-  }
-
-  /**
-   * A {@link ToolbarToggleButton.Listener} which applies a styling to a
-   * selection of text.
-   */
-  private final class TextSelectionController implements ToolbarToggleButton.Listener, Controller {
-    public final ToolbarToggleButton button;
-    public final String styleKey;
-    public final String styleValue;
-
-    public TextSelectionController(ToolbarToggleButton button, String styleKey, String styleValue) {
-      this.button = button;
-      this.styleKey = StyleAnnotationHandler.key(styleKey);
-      this.styleValue = styleValue;
-    }
-
-    @Override
-    public void onToggledOff() {
-      setSelectionStyle(null);
-    }
-
-    @Override
-    public void onToggledOn() {
-      setSelectionStyle(styleValue);
-    }
-
-    private void setSelectionStyle(final String style) {
-      if (editor.getSelectionHelper().getSelectionPoints() != null) {
-        editor.undoableSequence(new Runnable() {
-          @Override public void run() {
-            EditorAnnotationUtil.setAnnotationOverSelection(
-                editor, styleKey, style);
-          }
-        });
-      }
-    }
-
-    @Override
-    public void update(Range selectionRange) {
-      if (styleValue != null) {
-        String value =
-            EditorAnnotationUtil.getAnnotationOverRangeIfFull(editor.getDocument(),
-                editor.getCaretAnnotations(), styleKey, selectionRange.getStart(),
-                selectionRange.getEnd());
-        button.setToggledOn(styleValue.equals(value));
-      }
-    }
-  }
-
-  /**
-   * A {@link ToolbarClickButton.Listener} which applies a styling to a
-   * paragraph using {@link Paragraph#traverse}.
-   */
-  private final class ParagraphTraversalController implements ToolbarClickButton.Listener {
-    private final ContentElement.Action action;
-
-    public ParagraphTraversalController(ContentElement.Action action) {
-      this.action = action;
-    }
-
-    @Override
-    public void onClicked() {
-      final Range range = editor.getSelectionHelper().getOrderedSelectionRange();
-      if (range != null) {
-        editor.undoableSequence(new Runnable(){
-          @Override public void run() {
-            LocationMapper<ContentNode> locator = editor.getDocument();
-            Paragraph.traverse(locator, range.getStart(), range.getEnd(), action);
-          }
-        });
-      }
-    }
-  }
-
-  /**
-   * A {@link ToolbarToggleButton.Listener} which applies a styling to a
-   * paragraph using {@link Paragraph#apply}.
-   */
-  private final class ParagraphApplicationController
-      implements ToolbarToggleButton.Listener, Controller {
-    public final ToolbarToggleButton button;
-    public final Paragraph.LineStyle style;
-
-    public ParagraphApplicationController(ToolbarToggleButton button, Paragraph.LineStyle style) {
-      this.button = button;
-      this.style = style;
-    }
-
-    @Override
-    public void onToggledOn() {
-      setParagraphStyle(true);
-    }
-
-    @Override
-    public void onToggledOff() {
-      setParagraphStyle(false);
-    }
-
-    private void setParagraphStyle(final boolean isOn) {
-      final Range range = editor.getSelectionHelper().getOrderedSelectionRange();
-      if (range != null) {
-        editor.undoableSequence(new Runnable(){
-          @Override public void run() {
-            Paragraph.apply(editor.getDocument(), range.getStart(), range.getEnd(), style, isOn);
-          }
-        });
-      }
-    }
-
-    @Override
-    public void update(Range range) {
-      button.setToggledOn(
-          Paragraph.appliesEntirely(editor.getDocument(), range.getStart(), range.getEnd(), style));
-    }
   }
 
   /**
@@ -222,111 +107,36 @@ public class EditToolbar implements EditorUpdateListener {
     }
   }
 
-  /**
-   * Updates buttons asynchronously as a rate-limited background task. Buttons
-   * are not updated synchronously on editor events, because button updates
-   * typically involve annotation queries, which are quite slow.
-   */
-  private final static class ButtonUpdater implements CancellableCommand {
-    // In non-compiled mode, a single button update is on the order of 10ms. In
-    // compiled mode, it is more in the order of 1ms.
-    // With ~40 buttons to update, there is significant lag in non-compiled
-    // mode. This is addressed by rate-limiting the updates, with a very large
-    // delay in compiled mode. In non-compiled mode, frequent lag of ~50ms is
-    // noticeable, and so we still rate limit the updates, but with a more
-    // generous speed.
-    private final BucketRateLimiter runner;
-    // CopyOnWriteSet is used to ensure that the collection does not change
-    // while iterating.
-    private final CopyOnWriteSet<Controller> updateables = CopyOnWriteSet.create();
-
-    ButtonUpdater(TimerService scheduler) {
-      this.runner = new BucketRateLimiter(scheduler,
-          // Never queue more than one update at a time.
-          1,
-          // Never fire more than one update at a time.
-          1,
-          // Update at most 3 times per second in compiled mode, but much less
-          // frequently in non-compiled mode.
-          GWT.isScript() ? 333 : 2000);
-    }
-
-    /** Controllers to update. */
-    private Iterator<Controller> iterator;
-
-    /** Range to use on updates. */
-    private Range range;
-
-    /** Whether this updater should do any work. True while in an edit session. */
-    private boolean enabled;
-
-    void enable() {
-      enabled = true;
-    }
-
-    void disable() {
-      enabled = false;
-      runner.cancelAll();
-    }
-
-    /** Adds a controller to the update list. */
-    void add(Controller controller) {
-      updateables.add(controller);
-    }
-
-    void invalidate(Range selectionRange) {
-      if (!enabled || updateables.isEmpty()) {
-        return;
-      }
-      iterator = updateables.iterator();
-      range = selectionRange;
-      if (range != null && iterator.hasNext()) {
-        runner.schedule(this);
-      } else {
-        runner.cancel(this);
-      }
-    }
-
-    @Override
-    public void onCancelled() {
-      // Ignore.
-    }
-
-    @Override
-    public void execute() {
-      assert enabled;
-      for (Controller update : updateables) {
-        update.update(range);
-      }
-    }
-  }
-
   private final EditorToolbarResources.Css css;
   private final ToplevelToolbarWidget toolbarUi;
   private final ParticipantId user;
+  private final AttachmentIdGenerator attachmentIdGenerator;
 
-  private final ButtonUpdater updater;
-  private EditorContext editor;
+  /** The id of the currently loaded wave. */
+  private WaveId waveId;
+
+  private final EditorContextAdapter editor = new EditorContextAdapter(null);
+  private final ButtonUpdater updater = new ButtonUpdater(editor);
 
   private EditToolbar(EditorToolbarResources.Css css, ToplevelToolbarWidget toolbarUi,
-      ButtonUpdater updater, ParticipantId user) {
+      ParticipantId user, IdGenerator idGenerator, WaveId waveId) {
     this.css = css;
     this.toolbarUi = toolbarUi;
-    this.updater = updater;
     this.user = user;
+    this.waveId = waveId;
+    attachmentIdGenerator = new AttachmentIdGeneratorImpl(idGenerator);
   }
 
   /**
    * Attaches editor behaviour to a toolbar, adding all the edit buttons.
    */
-  public static EditToolbar create(ParticipantId user) {
+  public static EditToolbar create(ParticipantId user, IdGenerator idGenerator, WaveId waveId) {
     ToplevelToolbarWidget toolbarUi = new ToplevelToolbarWidget();
     EditorToolbarResources.Css css = EditorToolbarResources.Loader.res.css();
-    TimerService timer = SchedulerInstance.getMediumPriorityTimer();
-    ButtonUpdater updater = new ButtonUpdater(timer);
-    return new EditToolbar(css, toolbarUi, updater, user);
+    return new EditToolbar(css, toolbarUi, user, idGenerator, waveId);
   }
 
+  /** Constructs the initial set of actions in the toolbar. */
   public void init() {
     ToolbarView group = toolbarUi.addGroup();
     createBoldButton(group);
@@ -361,6 +171,9 @@ public class EditToolbar implements EditorUpdateListener {
 
     group = toolbarUi.addGroup();
     createInsertGadgetButton(group, user);
+
+    group = toolbarUi.addGroup();
+    createInsertAttachmentButton(group, user);
   }
 
   private void createBoldButton(ToolbarView toolbar) {
@@ -480,7 +293,8 @@ public class EditToolbar implements EditorUpdateListener {
                 StyleAnnotationHandler.key("fontSize"),
                 StyleAnnotationHandler.key("fontStyle"),
                 StyleAnnotationHandler.key("fontWeight"),
-                StyleAnnotationHandler.key("textDecoration")
+                StyleAnnotationHandler.key("textDecoration"),
+                StyleAnnotationHandler.key("verticalAlign")
                 // NOTE: add more as required.
             ));
             createClearHeadingsListener().onClicked();
@@ -493,40 +307,119 @@ public class EditToolbar implements EditorUpdateListener {
         .setIcon(css.insertGadget())
         .applyTo(toolbar.addClickButton(), new ToolbarClickButton.Listener() {
           @Override public void onClicked() {
-            String url = Window.prompt("Gadget URL", YES_NO_MAYBE_GADGET);
-            if (url != null && !url.isEmpty()) {
-              XmlStringBuilder xml = GadgetXmlUtil.constructXml(url, "", user.getAddress());
-              LineContainers.appendLine(editor.getDocument(), xml);
-            }
+            GadgetSelectorWidget selector = new GadgetSelectorWidget(new GadgetInfoProviderImpl(new GwtGadgetInfoParser()));
+            selector.addFeaturedOptions();
+            final UniversalPopup popup = selector.showInPopup();
+            selector.setListener(new GadgetSelectorWidget.Listener() {
+              @Override public void onSelect(String url) {
+                insertGadget(url);
+                popup.hide();
+              }
+            });
           }
         });
   }
 
+  private void insertGadget(String url) {
+    int from = -1;
+    FocusedRange focusedRange = editor.getSelectionHelper().getSelectionRange();
+    if (focusedRange != null) {
+      from = focusedRange.getFocus();
+    }
+    if (url != null && !url.isEmpty()) {
+      XmlStringBuilder xml = GadgetXmlUtil.constructXml(url, "", user.getAddress());
+      CMutableDocument document = editor.getDocument();
+      if (document == null) {
+        return;
+      }
+      if (from != -1) {
+        Point<ContentNode> point = document.locate(from);
+        document.insertXml(point, xml);
+      } else {
+        LineContainers.appendLine(document, xml);
+      }
+    }
+  }
+
+  private void createInsertAttachmentButton(ToolbarView toolbar, final ParticipantId user) {
+    WaveRef waveRef = WaveRef.of(waveId);
+    Preconditions.checkState(waveRef != null);
+    final String waveRefToken = URL.encode(GwtWaverefEncoder.encodeToUriQueryString(waveRef));
+
+    new ToolbarButtonViewBuilder().setIcon(css.insertAttachment()).setTooltip("Insert attachment")
+        .applyTo(toolbar.addClickButton(), new ToolbarClickButton.Listener() {
+          @Override
+          public void onClicked() {
+            int tmpCursor = -1;
+            FocusedRange focusedRange = editor.getSelectionHelper().getSelectionRange();
+            if (focusedRange != null) {
+              tmpCursor = focusedRange.getFocus();
+            }
+            final int cursorLoc = tmpCursor;
+            AttachmentPopupView attachmentView = new AttachmentPopupWidget();
+            attachmentView.init(new Listener() {
+
+              @Override
+              public void onShow() {
+              }
+
+              @Override
+              public void onHide() {
+              }
+
+              @Override
+              public void onDone(String encodedWaveRef, String attachmentId, String fullFileName) {
+                // Insert a file name linking to the attachment URL.
+                int lastSlashPos = fullFileName.lastIndexOf("/");
+                int lastBackSlashPos = fullFileName.lastIndexOf("\\");
+                String fileName = fullFileName;
+                if (lastSlashPos != -1) {
+                  fileName = fullFileName.substring(lastSlashPos + 1, fullFileName.length());
+                } else if (lastBackSlashPos != -1) {
+                  fileName = fullFileName.substring(lastBackSlashPos + 1, fullFileName.length());
+                }
+                XmlStringBuilder xml = XmlStringBuilder.createFromXmlString(fileName);
+                int to = -1;
+                int docSize = editor.getDocument().size();
+                if (cursorLoc != -1) {
+                  // Insert the attachment at the cursor location.
+                  CMutableDocument doc = editor.getDocument();
+                  Point<ContentNode> point = doc.locate(cursorLoc);
+                  doc.insertXml(point, xml);
+                } else {
+                  LineContainers.appendLine(editor.getDocument(), xml);
+                }
+                // Calculate the link length for the attachment.
+                to = cursorLoc + editor.getDocument().size() - docSize;
+                String linkValue =
+                    GWT.getHostPageBaseURL() + "attachment/" + attachmentId + "?fileName="
+                        + fileName + "&waveRef=" + encodedWaveRef;
+                EditorAnnotationUtil.setAnnotationOverRange(editor.getDocument(),
+                    editor.getCaretAnnotations(), Link.KEY, linkValue, cursorLoc, to);
+                // Store the attachment information as annotations to allow
+                // robots detect and process them.
+                EditorAnnotationUtil.setAnnotationOverRange(editor.getDocument(),
+                    editor.getCaretAnnotations(), "attachment/id", attachmentId, cursorLoc, to);
+                EditorAnnotationUtil.setAnnotationOverRange(editor.getDocument(),
+                    editor.getCaretAnnotations(), "attachment/fileName", fileName, cursorLoc, to);
+              }
+            });
+
+            attachmentView.setAttachmentId(attachmentIdGenerator.newAttachmentId());
+            attachmentView.setWaveRef(waveRefToken);
+            attachmentView.show();
+          }
+        });
+}
+
   private void createInsertLinkButton(ToolbarView toolbar) {
-    // TODO (Yuri Z.) use createTextSelectionController when the full link doodad
-    // is incorporated
+    // TODO (Yuri Z.) use createTextSelectionController when the full
+    // link doodad is incorporated
     new ToolbarButtonViewBuilder()
         .setIcon(css.insertLink())
         .applyTo(toolbar.addClickButton(), new ToolbarClickButton.Listener() {
               @Override  public void onClicked() {
-                FocusedRange range = editor.getSelectionHelper().getSelectionRange();
-                if (range == null || range.isCollapsed()) {
-                  Window.alert("Select some text to create a link.");
-                  return;
-                }
-                String rawLinkValue =
-                    Window.prompt("Enter link: URL or Wave ID.", WaveRefConstants.WAVE_URI_PREFIX);
-                // user hit "ESC" or "cancel"
-                if (rawLinkValue == null) {
-                  return;
-                }
-                try {
-                  String linkAnnotationValue = Link.normalizeLink(rawLinkValue);
-                  EditorAnnotationUtil.setAnnotationOverSelection(editor, Link.MANUAL_KEY,
-                      linkAnnotationValue);
-                } catch (InvalidLinkException e) {
-                  Window.alert(e.getLocalizedMessage());
-                }
+                LinkerHelper.onCreateLink(editor);
               }
             });
   }
@@ -536,15 +429,13 @@ public class EditToolbar implements EditorUpdateListener {
         .setIcon(css.removeLink())
         .applyTo(toolbar.addClickButton(), new ToolbarClickButton.Listener() {
           @Override public void onClicked() {
-            if (editor.getSelectionHelper().getSelectionRange() != null) {
-              EditorAnnotationUtil.clearAnnotationsOverSelection(editor, Link.LINK_KEYS);
-            }
+            LinkerHelper.onClearLink(editor);
           }
         });
   }
 
   private ToolbarClickButton.Listener createClearHeadingsListener() {
-    return new ParagraphTraversalController(new ContentElement.Action() {
+    return new ParagraphTraversalController(editor, new ContentElement.Action() {
         @Override public void execute(ContentElement e) {
           e.getMutableDoc().setElementAttribute(e, Paragraph.SUBTYPE_ATTR, null);
         }
@@ -581,14 +472,14 @@ public class EditToolbar implements EditorUpdateListener {
     ToolbarClickButton b = toolbar.addClickButton();
     new ToolbarButtonViewBuilder()
         .setIcon(css.indent())
-        .applyTo(b, new ParagraphTraversalController(Paragraph.INDENTER));
+        .applyTo(b, new ParagraphTraversalController(editor, Paragraph.INDENTER));
   }
 
   private void createOutdentButton(ToolbarView toolbar) {
     ToolbarClickButton b = toolbar.addClickButton();
     new ToolbarButtonViewBuilder()
         .setIcon(css.outdent())
-        .applyTo(b, new ParagraphTraversalController(Paragraph.OUTDENTER));
+        .applyTo(b, new ParagraphTraversalController(editor, Paragraph.OUTDENTER));
   }
 
   private void createUnorderedListButton(ToolbarView toolbar) {
@@ -625,25 +516,11 @@ public class EditToolbar implements EditorUpdateListener {
     }
   }
 
-  private TextSelectionController createTextSelectionController(
-      ToolbarToggleButton button, String styleName, String styleValue) {
-    TextSelectionController controller = new TextSelectionController(button, styleName, styleValue);
-    updater.add(controller);
-    return controller;
-  }
-
-  private ParagraphApplicationController createParagraphApplicationController(
-      ToolbarToggleButton button, LineStyle style) {
-    ParagraphApplicationController controller = new ParagraphApplicationController(button, style);
-    updater.add(controller);
-    return controller;
-  }
-
   /**
    * Adds a button to this toolbar.
    */
   public void addClickButton(String icon, final ClickHandler handler) {
-    ToolbarClickButton.Listener uiHandler =  new ToolbarClickButton.Listener() {
+    ToolbarClickButton.Listener uiHandler = new ToolbarClickButton.Listener() {
       @Override
       public void onClicked() {
         handler.onClicked(editor);
@@ -652,36 +529,35 @@ public class EditToolbar implements EditorUpdateListener {
     new ToolbarButtonViewBuilder().setIcon(icon).applyTo(toolbarUi.addClickButton(), uiHandler);
   }
 
-  //
-  // Event handling.
-  //
-
   /**
    * Starts listening to editor changes.
+   *
+   * @throws IllegalStateException if this toolbar is already enabled
+   * @throws IllegalArgumentException if the editor is <code>null</code>
    */
   public void enable(Editor editor) {
-    Preconditions.checkState(this.editor == null);
+    this.editor.checkEditor(null);
     Preconditions.checkArgument(editor != null);
-    this.editor = editor;
-    this.editor.addUpdateListener(this);
-    updater.enable();
-    updateButtonStates();
+    this.editor.switchEditor(editor);
+    editor.addUpdateListener(updater);
+    updater.updateButtonStates();
   }
 
   /**
    * Stops listening to editor changes.
+   *
+   * @throws IllegalStateException if this toolbar is not currently enabled
+   * @throws IllegalArgumentException if this toolbar is currently enabled for a
+   *         different editor
    */
   public void disable(Editor editor) {
-    Preconditions.checkState(this.editor != null);
-    Preconditions.checkArgument(this.editor == editor);
-    updater.disable();
-    this.editor.removeUpdateListener(this);
-    this.editor = null;
-  }
-
-  @Override
-  public void onUpdate(EditorUpdateEvent event) {
-    updateButtonStates();
+    this.editor.checkEditor(editor);
+    // The above won't throw if we're not currently enabled, but it makes sure
+    // 'editor' is the same as the current editor, if any. So if 'editor' is
+    // null, it means we aren't enabled (the wrapped editor is null too).
+    Preconditions.checkState(editor != null);
+    editor.removeUpdateListener(updater);
+    this.editor.switchEditor(null);
   }
 
   /**
@@ -691,11 +567,15 @@ public class EditToolbar implements EditorUpdateListener {
     return toolbarUi;
   }
 
-  private void updateButtonStates() {
-    Range range = editor.getSelectionHelper().getOrderedSelectionRange();
-    if (range != null) {
-      updater.invalidate(range);
-    }
+  private ToolbarToggleButton.Listener createParagraphApplicationController(ToolbarToggleButton b,
+      LineStyle style) {
+    return updater.add(new ParagraphApplicationController(b, editor, style));
+  }
+
+  private ToolbarToggleButton.Listener createTextSelectionController(ToolbarToggleButton b,
+      String styleName, String value) {
+    return updater.add(new TextSelectionController(b, editor,
+        StyleAnnotationHandler.key(styleName), value));
   }
 
   private static <E> E[] asArray(E... elements) {
