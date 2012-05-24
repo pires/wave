@@ -19,14 +19,22 @@ package org.waveprotocol.wave.model.gadget;
 
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.AUTHOR_ATTRIBUTE;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.CATEGORY_TAGNAME;
-import static org.waveprotocol.wave.model.gadget.GadgetConstants.TAGNAME;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.KEY_ATTRIBUTE;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.PREFS_ATTRIBUTE;
+import static org.waveprotocol.wave.model.gadget.GadgetConstants.PREF_TAGNAME;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.STATE_ATTRIBUTE;
+import static org.waveprotocol.wave.model.gadget.GadgetConstants.STATE_TAGNAME;
+import static org.waveprotocol.wave.model.gadget.GadgetConstants.TAGNAME;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.TITLE_ATTRIBUTE;
+import static org.waveprotocol.wave.model.gadget.GadgetConstants.TITLE_TAGNAME;
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.URL_ATTRIBUTE;
+import static org.waveprotocol.wave.model.gadget.GadgetConstants.VALUE_ATTRIBUTE;
 
 import org.waveprotocol.wave.model.document.util.XmlStringBuilder;
+
+import java.util.Map;
+
+import javax.annotation.Nullable;
 
 /**
  * Static methods to produce Wave Gadget XML elements.
@@ -54,7 +62,7 @@ public final class GadgetXmlUtil {
    * @return content XML string for the gadget.
    */
   public static XmlStringBuilder constructXml(String url, String prefs, String author) {
-    return constructXml(url, prefs, author, null);
+    return constructXml(url, prefs, author, null, null);
   }
 
   /**
@@ -64,16 +72,23 @@ public final class GadgetXmlUtil {
    * @param prefs initial gadget preferences as escaped JSON string.
    * @param categories array of category names for the gadget (e.g. ["game",
    *        "chess"]).
+   * @param state the initial gadget state.
    * @return content XML string for the gadget.
    */
   public static XmlStringBuilder constructXml(String url, String prefs, String author,
-      String[] categories) {
-    XmlStringBuilder builder = XmlStringBuilder.createEmpty();
+      @Nullable String[] categories, @Nullable Map<String, String> state) {
+    final XmlStringBuilder builder = XmlStringBuilder.createEmpty();
     if (categories != null) {
       for (int i = 0; i < categories.length; ++i) {
         builder.append(
             XmlStringBuilder.createText("").wrap(
                 CATEGORY_TAGNAME, KEY_ATTRIBUTE, categories[i]));
+      }
+    }
+    if (state != null) {
+      for (Map.Entry<String, String> entry : state.entrySet()) {
+        builder.append(
+            GadgetXmlUtil.constructStateXml(entry.getKey(), entry.getValue()));
       }
     }
     builder.wrap(
@@ -85,5 +100,62 @@ public final class GadgetXmlUtil {
         // TODO(user): Implement finer author management for gadgets.
         AUTHOR_ATTRIBUTE, author);
     return builder;
+  }
+
+  /**
+   * Returns initialized XML string builder for a gadget categories element.
+   *
+   * @param categories the categories.
+   * @return XML builder for the name element.
+   */
+  public static XmlStringBuilder constructCategoriesXml(String categories) {
+    return XmlStringBuilder.createText("")
+                           .wrap(CATEGORY_TAGNAME, KEY_ATTRIBUTE, categories);
+  }
+
+  /**
+   * Returns initialized XML string builder for a gadget title element.
+   *
+   * @param title the title value
+   * @return XML builder for the title element
+   */
+  public static XmlStringBuilder constructTitleXml(String title) {
+    return XmlStringBuilder.createText("").wrap(TITLE_TAGNAME, VALUE_ATTRIBUTE, title);
+  }
+
+  /**
+   * Returns initialized XML string builder for a gadget element.
+   *
+   * @param tag element tag
+   * @param key the key
+   * @param value the value
+   * @return XML string builder for the state element
+   */
+  public static XmlStringBuilder constructElementXml(String tag, String key, String value) {
+    return XmlStringBuilder.createText("").wrap(tag, KEY_ATTRIBUTE, key, VALUE_ATTRIBUTE, value);
+  }
+
+  /**
+   * Returns initialized XML string builder for a gadget state element.
+   *
+   * @param key the key
+   * @param value the value
+   * @return XML string builder for the state element
+   */
+  public static XmlStringBuilder constructStateXml(String key, String value) {
+    return XmlStringBuilder.createText("").wrap(
+        STATE_TAGNAME, KEY_ATTRIBUTE, key, VALUE_ATTRIBUTE, value);
+  }
+
+  /**
+   * Returns initialized XML string builder for a gadget user pref element.
+   *
+   * @param key the key
+   * @param value the value
+   * @return XML string builder for the state element
+   */
+  public static XmlStringBuilder constructPrefXml(String key, String value) {
+    return XmlStringBuilder.createText("").wrap(
+        PREF_TAGNAME, KEY_ATTRIBUTE, key, VALUE_ATTRIBUTE, value);
   }
 }

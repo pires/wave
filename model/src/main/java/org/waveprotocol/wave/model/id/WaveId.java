@@ -50,7 +50,7 @@ public final class WaveId implements Comparable<WaveId>, Serializable {
    * @throws InvalidIdException if the serialised form is invalid
    */
   public static WaveId checkedDeserialise(String waveIdString) throws InvalidIdException {
-    return LegacyIdSerialiser.INSTANCE.deserialiseWaveId(waveIdString);
+    return DualIdSerialiser.MODERN.deserialiseWaveId(waveIdString);
   }
 
   /**
@@ -153,7 +153,7 @@ public final class WaveId implements Comparable<WaveId>, Serializable {
    */
   public String serialise() {
     if (cachedSerialisation == null) {
-      cachedSerialisation = LegacyIdSerialiser.INSTANCE.serialiseWaveId(this);
+      cachedSerialisation = DualIdSerialiser.MODERN.serialiseWaveId(this);
     }
     return cachedSerialisation;
   }

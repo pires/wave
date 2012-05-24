@@ -37,19 +37,16 @@ public interface ObservableConversationBlip extends ConversationBlip {
   Iterable<? extends ObservableConversationThread> getReplyThreads();
 
   @Override
-  Iterable<? extends ObservableConversationThread> getAllReplyThreads();
-
-  @Override
-  Iterable<? extends InlineReplyThread<? extends ObservableConversationThread>>
-      getInlineReplyThreads();
+  Iterable<? extends LocatedReplyThread<? extends ObservableConversationThread>>
+      locateReplyThreads();
 
   @Override
   ObservableConversationThread getReplyThread(String id);
 
 
   @Override
-  ObservableConversationThread appendReplyThread();
+  ObservableConversationThread addReplyThread();
 
   @Override
-  ObservableConversationThread appendInlineReplyThread(int location);
+  ObservableConversationThread addReplyThread(int location);
 }
