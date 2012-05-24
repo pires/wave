@@ -16,6 +16,8 @@
     <guava.version>12.0</guava.version>
     <gwt.version>2.4.0</gwt.version>
     <jetty.version>8.1.3.v20120416</jetty.version>
+    <socketio.version>0.1-SNAPSHOT</socketio.version>
+    <guice.version>2.0</guice.version>
   </properties>
 
   <modules>
@@ -72,7 +74,17 @@
       <dependency>
         <groupId>com.google.inject</groupId>
         <artifactId>guice</artifactId>
-        <version>2.0</version>
+        <version>${guice.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.inject.extensions</groupId>
+        <artifactId>guice-servlet</artifactId>
+        <version>${guice.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.inject.extensions</groupId>
+        <artifactId>guice-assisted-inject</artifactId>
+        <version>${guice.version}</version>
       </dependency>
       <dependency>
         <groupId>com.google.collections</groupId>
@@ -82,7 +94,17 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
-        <version>12.0</version>
+        <version>10.0.1</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.protobuf</groupId>
+        <artifactId>protobuf-java</artifactId>
+        <version>${protobuf.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.gxp</groupId>
+        <artifactId>google-gxp</artifactId>
+        <version>0.2.4-beta</version>
       </dependency>
 
       <!-- GWT -->
@@ -100,17 +122,17 @@
       <!-- OAuth -->
       <dependency>
         <groupId>net.oauth</groupId>
-        <artifactId>oauth-commons</artifactId>
+        <artifactId>commons</artifactId>
         <version>20100601</version>
       </dependency>
       <dependency>
         <groupId>net.oauth</groupId>
-        <artifactId>oauth-provider</artifactId>
+        <artifactId>provider</artifactId>
         <version>20100601</version>
       </dependency>
       <dependency>
         <groupId>net.oauth</groupId>
-        <artifactId>oauth-consumer</artifactId>
+        <artifactId>consumer</artifactId>
         <version>20100601</version>
       </dependency>
       <dependency>
@@ -122,13 +144,6 @@
         <groupId>net.oauth</groupId>
         <artifactId>httpclient4</artifactId>
         <version>20100601</version>
-      </dependency>
-
-      <!-- Protobuf -->
-      <dependency>
-        <groupId>com.google.protobuf</groupId>
-        <artifactId>protobuf-java</artifactId>
-        <version>${protobuf.version}</version>
       </dependency>
 
       <!-- Commons -->
@@ -153,11 +168,50 @@
         <version>3.1</version>
       </dependency>
 
+      <!-- Igniterealtime -->
+      <dependency>
+        <groupId>org.igniterealtime</groupId>
+        <artifactId>tinder</artifactId>
+        <version>1.2.3</version>
+      </dependency>
+      <dependency>
+        <groupId>org.igniterealtime</groupId>
+        <artifactId>whack</artifactId>
+        <version>1.0.0</version>
+      </dependency>
+
+      <!-- SocketIO Java -->
+      <dependency>
+        <groupId>com.glines.socketio</groupId>
+        <artifactId>socketio</artifactId>
+        <version>${socketio.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio</groupId>
+        <artifactId>socketio-core</artifactId>
+        <version>${socketio.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio.extension</groupId>
+        <artifactId>socketio-extension</artifactId>
+        <version>${socketio.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio.extension</groupId>
+        <artifactId>socketio-gwt</artifactId>
+        <version>${socketio.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio.extension</groupId>
+        <artifactId>socketio-jetty</artifactId>
+        <version>${socketio.version}</version>
+      </dependency>
+
       <!-- Miscellaneous -->
       <dependency>
         <groupId>org.jdom</groupId>
         <artifactId>jdom</artifactId>
-        <version>2.0.1</version>
+        <version>1.1.3</version>
       </dependency>
       <dependency>
         <groupId>org.hamcrest</groupId>
@@ -218,11 +272,6 @@
       <url>http://oss.sonatype.org/content/repositories/google-releases/
             </url>
     </repository>
-    <repository>
-      <id>oauth</id>
-      <name>OAuth Repository</name>
-      <url>http://oauth.googlecode.com/svn/code/maven</url>
-    </repository>
     <!-- Socket.IO -->
     <repository>
       <id>mc-snapshot</id>
@@ -244,7 +293,7 @@
       <id>wave-local</id>
       <layout>default</layout>
       <name>wave local</name>
-      <url>file:///${basedir}/repo/</url>
+      <url>file:///${basedir}/../repo/</url>
     </repository>
   </repositories>
 
