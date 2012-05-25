@@ -7,6 +7,13 @@ This way, one expects the project to be easier to understand and faster to build
 ## Prerequisites ##
 - JDK 6
 - Maven 3.0.3 or newer
+- Protocol Buffers compiler installed (_protoc_)
+
+### Install Protocol Buffers compiler ###
+
+On Mac OS X (with _brew_) execute: _brew install protobuf_
+
+And then edit build-proto.properties to match your installation.
 
 ## Build ##
 
@@ -15,12 +22,6 @@ This way, one expects the project to be easier to understand and faster to build
 For now, we're just focusing on building every little piece of Wave. And for that, you've got to execute the following command:
 
 _mvn clean package_
-
-Be sure to have _protoc_ installed. On Mac OS X with _brew_ just run the following command:
-
-_brew install protoc_
-
-And then edit build-proto.properties to match your installation.
 
 ## Test ##
 
