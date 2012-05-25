@@ -17,6 +17,8 @@
 
 package org.waveprotocol.box.common;
 
+import com.google.common.collect.Lists;
+
 import org.waveprotocol.wave.model.document.operation.AnnotationBoundaryMap;
 import org.waveprotocol.wave.model.document.operation.Attributes;
 import org.waveprotocol.wave.model.document.operation.AttributesUpdate;
@@ -31,6 +33,7 @@ import org.waveprotocol.wave.model.wave.data.WaveletData;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Utility methods for rendering snippets.
@@ -130,49 +133,64 @@ public final class Snippets {
    * Returns a snippet or null.
    */
   public static String renderSnippet(final ReadableWaveletData wavelet,
-      final int maxSnippetLength) {
-    ReadableBlipData blip = wavelet.getDocument(DocumentConstants.CONVERSATION);
-    if (blip == null) {
-      // Render whatever data we have and hope its good enough
-      return collateTextForWavelet(wavelet);
-    }
-
-    DocOp docOp = blip.getContent().asOperation();
+ final int maxSnippetLength) {
     final StringBuilder sb = new StringBuilder();
-    docOp.apply(InitializationCursorAdapter.adapt(new DocInitializationCursor() {
-      @Override
-      public void annotationBoundary(AnnotationBoundaryMap map) {
+    Set<String> docsIds = wavelet.getDocumentIds();
+    long newestLmt = -1;
+    ReadableBlipData newestBlip = null;
+    for (String docId : docsIds) {
+      ReadableBlipData blip = wavelet.getDocument(docId);
+      long currentLmt = blip.getLastModifiedTime();
+      if (currentLmt > newestLmt) {
+        newestLmt = currentLmt;
+        newestBlip = blip;
       }
-
-      @Override
-      public void characters(String chars) {
-        // No chars in the conversation manifest
-      }
-
-      @Override
-      public void elementEnd() {
-      }
-
-      @Override
-      public void elementStart(String type, Attributes attrs) {
-        if (sb.length() >= maxSnippetLength) {
-          return;
+    }
+    if (newestBlip == null) {
+      // Render whatever data we have and hope its good enough
+      sb.append(collateTextForWavelet(wavelet));
+    } else {
+      DocOp docOp = newestBlip.getContent().asOperation();
+      sb.append(collateTextForOps(Lists.newArrayList(docOp)));
+      sb.append(" ");
+      docOp.apply(InitializationCursorAdapter.adapt(new DocInitializationCursor() {
+        @Override
+        public void annotationBoundary(AnnotationBoundaryMap map) {
         }
 
-        if (DocumentConstants.BLIP.equals(type)) {
-          String blipId = attrs.get(DocumentConstants.BLIP_ID);
-          if (blipId != null) {
-            ReadableBlipData document = wavelet.getDocument(blipId);
-            if (document == null) {
-              // We see this when a blip has been deleted
-              return;
+        @Override
+        public void characters(String chars) {
+          // No chars in the conversation manifest
+        }
+
+        @Override
+        public void elementEnd() {
+        }
+
+        @Override
+        public void elementStart(String type, Attributes attrs) {
+          if (sb.length() >= maxSnippetLength) {
+            return;
+          }
+
+          if (DocumentConstants.BLIP.equals(type)) {
+            String blipId = attrs.get(DocumentConstants.BLIP_ID);
+            if (blipId != null) {
+              ReadableBlipData document = wavelet.getDocument(blipId);
+              if (document == null) {
+                // We see this when a blip has been deleted
+                return;
+              }
+              sb.append(collateTextForDocuments(Arrays.asList(document)));
+              sb.append(" ");
             }
-            sb.append(collateTextForDocuments(Arrays.asList(document)));
-            sb.append(" ");
           }
         }
-      }
-    }));
+      }));
+    }
+    if (sb.length() > maxSnippetLength) {
+      return sb.substring(0, maxSnippetLength);
+    }
     return sb.toString();
   }
 

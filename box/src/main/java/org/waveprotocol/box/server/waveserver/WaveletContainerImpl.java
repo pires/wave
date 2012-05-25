@@ -17,6 +17,7 @@
 
 package org.waveprotocol.box.server.waveserver;
 
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -47,8 +48,8 @@ import org.waveprotocol.wave.util.logging.Log;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -64,7 +65,7 @@ abstract class WaveletContainerImpl implements WaveletContainer {
 
   private static final Log LOG = Log.get(WaveletContainerImpl.class);
 
-  private static final int AWAIT_LOAD_TIMEOUT_SECONDS = 20;
+  private static final int AWAIT_LOAD_TIMEOUT_SECONDS = 1000;
 
   protected enum State {
     /** Everything is working fine. */
@@ -83,9 +84,7 @@ abstract class WaveletContainerImpl implements WaveletContainer {
     CORRUPTED
   }
 
-  // TODO(soren): inject an executor which can be shared with other wavelets
-  private final Executor storageContinuationExecutor =
-      Executors.newSingleThreadExecutor();
+  private final Executor storageContinuationExecutor;
 
   private final Lock readLock;
   private final ReentrantReadWriteLock.WriteLock writeLock;
@@ -101,18 +100,21 @@ abstract class WaveletContainerImpl implements WaveletContainer {
   /**
    * Constructs an empty WaveletContainer for a wavelet.
    * WaveletData is not set until a delta has been applied.
-   * 
+   *
    * @param notifiee the subscriber to notify of wavelet updates and commits.
    * @param waveletState the wavelet's delta history and current state.
    * @param waveDomain the wave server domain.
+   * @param storageContinuationExecutor the executor used to perform post wavelet loading logic.
    */
   public WaveletContainerImpl(WaveletName waveletName, WaveletNotificationSubscriber notifiee,
-      final ListenableFuture<? extends WaveletState> waveletStateFuture, String waveDomain) {
+      final ListenableFuture<? extends WaveletState> waveletStateFuture, String waveDomain,
+      Executor storageContinuationExecutor) {
     this.waveletName = waveletName;
     this.notifiee = notifiee;
     this.sharedDomainParticipantId =
         waveDomain != null ? ParticipantIdUtil.makeUnsafeSharedDomainParticipantId(waveDomain)
             : null;
+    this.storageContinuationExecutor = storageContinuationExecutor;
     ReentrantReadWriteLock readWriteLock = new ReentrantReadWriteLock();
     this.readLock = readWriteLock.readLock();
     this.writeLock = readWriteLock.writeLock();
@@ -234,9 +236,16 @@ abstract class WaveletContainerImpl implements WaveletContainer {
         new Runnable() {
           @Override
           public void run() {
+            try {
+              result.get();
+            } catch (InterruptedException e) {
+              Thread.currentThread().interrupt();
+            } catch (ExecutionException e) {
+              LOG.severe("Version " + version, e);
+            }
             acquireWriteLock();
             try {
-              // waveletState.flush(version); // TODO(soren): implement this
+              waveletState.flush(version);
               notifyOfCommit(version, domainsToNotify);
             } finally {
               releaseWriteLock();
@@ -267,7 +276,7 @@ abstract class WaveletContainerImpl implements WaveletContainer {
       releaseReadLock();
     }
   }
-  
+
   @Override
   public HashedVersion getLastCommittedVersion() throws WaveletStateException {
     awaitLoad();
@@ -298,9 +307,21 @@ abstract class WaveletContainerImpl implements WaveletContainer {
     acquireReadLock();
     try {
       checkStateOk();
-      ReadableWaveletData snapshot = waveletState.getSnapshot();
       return new CommittedWaveletSnapshot(waveletState.getSnapshot(),
           waveletState.getLastPersistedVersion());
+    } finally {
+      releaseReadLock();
+    }
+  }
+
+  @Override
+  public <T> T applyFunction(Function<ReadableWaveletData, T> function)
+      throws WaveletStateException {
+    awaitLoad();
+    acquireReadLock();
+    try {
+      checkStateOk();
+      return function.apply(waveletState.getSnapshot());
     } finally {
       releaseReadLock();
     }
@@ -500,9 +521,9 @@ abstract class WaveletContainerImpl implements WaveletContainer {
       releaseReadLock();
     }
   }
-  
-  
-  
+
+
+
   @Override
   public ParticipantId getSharedDomainParticipant() {
     return sharedDomainParticipantId;

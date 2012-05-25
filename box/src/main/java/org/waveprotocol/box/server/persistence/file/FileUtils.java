@@ -28,11 +28,13 @@ import org.waveprotocol.wave.model.id.WaveletName;
 import org.waveprotocol.wave.model.util.Pair;
 import org.waveprotocol.wave.util.logging.Log;
 
+import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.RandomAccessFile;
@@ -219,22 +221,7 @@ public class FileUtils {
    */
   public static void performDirectoryChecks(String dir, final String extension, String dirType,
       Log LOG) throws PersistenceException {
-    File baseDir = new File(dir);
-
-    // Make sure the dir exists.
-    if (!baseDir.exists()) {
-      // It doesn't so try and create it.
-      if (!baseDir.mkdirs()) {
-        throw new PersistenceException(String.format(
-            "Configured %s directory (%s) doesn't exist and could not be created!", dirType, dir));
-      }
-    }
-
-    // Make sure the dir is a directory.
-    if (!baseDir.isDirectory()) {
-      throw new PersistenceException(String.format(
-          "Configured %s path (%s) isn't a directory!", dirType, dir));
-    }
+    File baseDir = createDirIfNotExists(dir, dirType);
 
     // Make sure we can read files by trying to read one of the files.
     File[] files = baseDir.listFiles(new FilenameFilter() {
@@ -279,5 +266,65 @@ public class FileUtils {
       throw new PersistenceException(String.format(
           "Configured %s directory (%s) does not appear to be writable!", dirType, dir), e);
     }
+  }
+
+  /**
+   * Creates a directory if it doesn't exist.
+   *
+   * @param dir the directory location.
+   * @param dirType the directory type description (only useful for logs).
+   * @return the File directory (it's created if doesn't exist).
+   * @throws PersistenceException if the directory doesn't exist and cannot be
+   *         created or when the path described by <code>dir</code> is not a
+   *         directory.
+   */
+  public static File createDirIfNotExists(String dir, String dirType) throws PersistenceException {
+    File baseDir = new File(dir);
+
+    // Make sure the dir exists.
+    if (!baseDir.exists()) {
+      // It doesn't so try and create it.
+      if (!baseDir.mkdirs()) {
+        throw new PersistenceException(String.format(
+            "Configured %s directory (%s) doesn't exist and could not be created!", dirType, dir));
+      }
+    }
+
+    // Make sure the dir is a directory.
+    if (!baseDir.isDirectory()) {
+      throw new PersistenceException(String.format(
+          "Configured %s path (%s) isn't a directory!", dirType, dir));
+    }
+    return baseDir;
+  }
+
+  /**
+   * Opens a file and read the content to a string.
+   *
+   * @param fileName the file to read.
+   * @return a string with the content of the file.
+   * @throws IOException if the method failed to open the file for reading.
+   */
+  public static String getStringFromFile(String fileName) throws IOException {
+    StringBuilder stringBuilder = new StringBuilder();
+    File file = new File(fileName);
+    FileReader fileReader = new FileReader(file);
+    BufferedReader bufferedReader = new BufferedReader(fileReader);
+
+    String line;
+    while ((line = bufferedReader.readLine()) != null) {
+      stringBuilder.append(line);
+    }
+    fileReader.close();
+
+    return stringBuilder.toString();
+  }
+
+  public static boolean isDirExistsAndNonEmpty(String dir) {
+    File baseDir = new File(dir);
+    if (!(baseDir.exists() && baseDir.isDirectory()) || baseDir.list().length == 0) {
+      return false;
+    }
+    return true;
   }
 }

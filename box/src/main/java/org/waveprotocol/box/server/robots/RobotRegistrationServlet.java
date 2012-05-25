@@ -20,25 +20,22 @@ package org.waveprotocol.box.server.robots;
 import com.google.common.base.Strings;
 import com.google.gxp.base.GxpContext;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 
 import org.waveprotocol.box.server.CoreSettings;
-import org.waveprotocol.box.server.account.AccountData;
 import org.waveprotocol.box.server.account.RobotAccountData;
-import org.waveprotocol.box.server.account.RobotAccountDataImpl;
-import org.waveprotocol.box.server.gxp.robots.RobotRegistrationPage;
-import org.waveprotocol.box.server.gxp.robots.RobotRegistrationSuccessPage;
-import org.waveprotocol.box.server.persistence.AccountStore;
+import org.waveprotocol.box.server.gxp.RobotRegistrationPage;
+import org.waveprotocol.box.server.gxp.RobotRegistrationSuccessPage;
 import org.waveprotocol.box.server.persistence.PersistenceException;
-import org.waveprotocol.wave.model.id.TokenGenerator;
+import org.waveprotocol.box.server.robots.register.RobotRegistrar;
+import org.waveprotocol.box.server.robots.util.RobotsUtil.RobotRegistrationException;
 import org.waveprotocol.wave.model.wave.InvalidParticipantAddress;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.util.logging.Log;
 
 import java.io.IOException;
-import java.net.URI;
 
-import javax.inject.Singleton;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,20 +51,19 @@ public class RobotRegistrationServlet extends HttpServlet {
 
   private static final String CREATE_PATH = "/create";
 
-  private static final int TOKEN_LENGTH = 48;
-
   private static final Log LOG = Log.get(RobotRegistrationServlet.class);
 
-  private final AccountStore accountStore;
+  private final RobotRegistrar robotRegistrar;
   private final String domain;
-  private final TokenGenerator tokenGenerator;
+  private final String analyticsAccount;
 
   @Inject
-  private RobotRegistrationServlet(AccountStore accountStore,
-      @Named(CoreSettings.WAVE_SERVER_DOMAIN) String domain, TokenGenerator tokenGenerator) {
-    this.accountStore = accountStore;
+  private RobotRegistrationServlet(@Named(CoreSettings.WAVE_SERVER_DOMAIN) String domain,
+      RobotRegistrar robotRegistrar,
+      @Named(CoreSettings.ANALYTICS_ACCOUNT) String analyticsAccount) {
+    this.robotRegistrar = robotRegistrar;
     this.domain = domain;
-    this.tokenGenerator = tokenGenerator;
+    this.analyticsAccount = analyticsAccount;
   }
 
   @Override
@@ -97,7 +93,8 @@ public class RobotRegistrationServlet extends HttpServlet {
    */
   private void doRegisterGet(HttpServletRequest req, HttpServletResponse resp, String message)
       throws IOException {
-    RobotRegistrationPage.write(resp.getWriter(), new GxpContext(req.getLocale()), domain, message);
+    RobotRegistrationPage.write(resp.getWriter(), new GxpContext(req.getLocale()), domain, message,
+        analyticsAccount);
     resp.setContentType("text/html");
     resp.setStatus(HttpServletResponse.SC_OK);
   }
@@ -122,55 +119,17 @@ public class RobotRegistrationServlet extends HttpServlet {
       return;
     }
 
-    AccountData account;
-    try {
-      account = accountStore.getAccount(id);
+    RobotAccountData robotAccount = null;
+    try{
+      robotAccount = robotRegistrar.registerNew(id, location);
+    } catch (RobotRegistrationException e) {
+      doRegisterGet(req, resp, e.getMessage());
+      return;
     } catch (PersistenceException e) {
       LOG.severe("Failed to retrieve account data for " + id, e);
-      doRegisterGet(req, resp,
-          "Failed to retreive account data for " + username);
+      doRegisterGet(req, resp, "Failed to retrieve account data for " + id.getAddress());
       return;
     }
-    if (account != null) {
-      doRegisterGet(req, resp, username + " is already in use, please choose another one.");
-      return;
-    }
-
-    URI uri;
-    try {
-      uri = URI.create(location);
-    } catch (IllegalArgumentException e) {
-      doRegisterGet(req, resp,
-          "Invalid Location specified, please specify a location in URI format.");
-      return;
-    }
-
-    String robotLocation;
-    String scheme = uri.getScheme();
-    if (scheme == null || !(scheme.equals("http") || scheme.equals("https"))) {
-      robotLocation = "http://" + uri.toString();
-    } else {
-      robotLocation = uri.toString();
-    }
-
-    if (robotLocation.endsWith("/")) {
-      robotLocation = robotLocation.substring(0, robotLocation.length() - 1);
-    }
-
-    // TODO(ljvderijk): Implement the verification.
-    RobotAccountData robotAccount = new RobotAccountDataImpl(
-        id, robotLocation, tokenGenerator.generateToken(TOKEN_LENGTH), null, true);
-    try {
-      accountStore.putAccount(robotAccount);
-    } catch (PersistenceException e) {
-      LOG.severe("Failed to update account data for " + id, e);
-      doRegisterGet(req, resp,
-          "An unexpected error occured while trying to store the account data for " + username);
-      return;
-    }
-    LOG.info(robotAccount.getId() + " is now registered as a RobotAccount with Url "
-        + robotAccount.getUrl());
-
     onRegisterSuccess(req, resp, robotAccount);
   }
 
@@ -184,7 +143,7 @@ public class RobotRegistrationServlet extends HttpServlet {
   private void onRegisterSuccess(HttpServletRequest req, HttpServletResponse resp,
       RobotAccountData robotAccount) throws IOException {
     RobotRegistrationSuccessPage.write(resp.getWriter(), new GxpContext(req.getLocale()),
-        robotAccount.getId().getAddress(), robotAccount.getConsumerSecret());
+        robotAccount.getId().getAddress(), robotAccount.getConsumerSecret(), analyticsAccount);
     resp.setContentType("text/html");
     resp.setStatus(HttpServletResponse.SC_OK);
   }

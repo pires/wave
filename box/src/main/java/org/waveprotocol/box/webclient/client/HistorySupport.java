@@ -16,62 +16,22 @@
 
 package org.waveprotocol.box.webclient.client;
 
-import com.google.gwt.event.logical.shared.ValueChangeEvent;
-import com.google.gwt.event.logical.shared.ValueChangeHandler;
-import com.google.gwt.user.client.History;
-
-import org.waveprotocol.box.webclient.client.events.WaveSelectionEvent;
-import org.waveprotocol.box.webclient.util.Log;
-import org.waveprotocol.wave.model.id.ModernIdSerialiser;
-import org.waveprotocol.wave.model.waveref.InvalidWaveRefException;
-import org.waveprotocol.wave.model.waveref.WaveRef;
-import org.waveprotocol.wave.util.escapers.GwtWaverefEncoder;
-
-import javax.annotation.Nullable;
-
 /**
  * Contains the code to interface the history event mechanism with the client's
  * event bus. At the moment, a history token encodes a wave id or wave ref.
  */
 public class HistorySupport {
-  private static final Log LOG = Log.get(HistorySupport.class);
 
-  public static void init() {
-    History.addValueChangeHandler(new ValueChangeHandler<String>() {
-      @Override
-      public void onValueChange(ValueChangeEvent<String> event) {
-        String encodedToken = event.getValue();
-        if (encodedToken == null || encodedToken.length() == 0) {
-          return;
-        }
-        WaveRef waveRef = waveRefFromHistoryToken(encodedToken);
-        if (waveRef == null) {
-          LOG.info("History token contains invalid path: " + encodedToken);
-          return;
-        }
-        LOG.info("Changing selected wave based on history event to " + waveRef.toString());
-        ClientEvents.get().fireEvent(new WaveSelectionEvent(waveRef));
-      }
-    });
-  }
+  private static HistoryProvider historyProvider;
 
-  /**
-   * @param encodedToken token to parse into waveref
-   * @return null if cannot parse into valid waveRef
-   */
-  @Nullable
-  static WaveRef waveRefFromHistoryToken(String encodedToken) {
-    try {
-      return GwtWaverefEncoder.decodeWaveRefFromPath(encodedToken);
-    } catch (InvalidWaveRefException e) {
-      return null;
-    }
-  }
-
-  static String historyTokenFromWaveref(WaveRef ref) {
-    return GwtWaverefEncoder.encodeToUriPathSegment(ref);
+  public static void init(HistoryProvider historyProvider) {
+    HistorySupport.historyProvider = historyProvider;
   }
 
   private HistorySupport() {
+  }
+
+  public static String getToken() {
+    return historyProvider.getToken();
   }
 }

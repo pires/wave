@@ -19,6 +19,8 @@ package org.waveprotocol.box.webclient.search;
 import org.waveprotocol.box.webclient.client.ClientEvents;
 import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
 import org.waveprotocol.box.webclient.search.Search.State;
+import org.waveprotocol.wave.client.account.Profile;
+import org.waveprotocol.wave.client.account.ProfileListener;
 import org.waveprotocol.wave.client.scheduler.Scheduler.IncrementalTask;
 import org.waveprotocol.wave.client.scheduler.Scheduler.Task;
 import org.waveprotocol.wave.client.scheduler.SchedulerInstance;
@@ -30,6 +32,7 @@ import org.waveprotocol.wave.client.widget.toolbar.buttons.ToolbarClickButton;
 import org.waveprotocol.wave.model.id.WaveId;
 import org.waveprotocol.wave.model.util.CollectionUtils;
 import org.waveprotocol.wave.model.util.IdentityMap;
+import org.waveprotocol.wave.model.wave.SourcesEvents;
 
 /**
  * Presents a search model into a search view.
@@ -40,17 +43,21 @@ import org.waveprotocol.wave.model.util.IdentityMap;
  * @author hearnden@google.com (David Hearnden)
  */
 public final class SearchPresenter
-    implements Search.Listener, SearchPanelView.Listener, SearchView.Listener {
+    implements Search.Listener, SearchPanelView.Listener, SearchView.Listener, ProfileListener {
 
   /**
-   * Handles digest selection actions.
+   * Handles wave actions.
    */
-  public interface WaveSelectionHandler {
+  public interface WaveActionHandler {
+    /** Handles the wave creation action. */
+    void onCreateWave();
+
+    /** Handles a wave selection action. */
     void onWaveSelected(WaveId id);
   }
 
   /** How often to repeat the search query. */
-  private final static int POLLING_INTERVAL_MS = 10000; // 10s
+  private final static int POLLING_INTERVAL_MS = 15000; // 15s
   private final static String DEFAULT_SEARCH = "in:inbox";
   private final static int DEFAULT_PAGE_SIZE = 20;
 
@@ -58,7 +65,7 @@ public final class SearchPresenter
   private final TimerService scheduler;
   private final Search search;
   private final SearchPanelView searchUi;
-  private final WaveSelectionHandler selectionHandler;
+  private final WaveActionHandler actionHandler;
 
   // Internal state
   private final IdentityMap<DigestView, Digest> digestUis = CollectionUtils.createIdentityMap();
@@ -88,13 +95,17 @@ public final class SearchPresenter
   private int querySize = DEFAULT_PAGE_SIZE;
   /** Current selected digest. */
   private DigestView selected;
+  
+  /** The dispatcher of profiles events. */
+  SourcesEvents<ProfileListener> profiles;
 
   SearchPresenter(TimerService scheduler, Search search, SearchPanelView searchUi,
-      WaveSelectionHandler selectionHandler) {
+      WaveActionHandler actionHandler, SourcesEvents<ProfileListener> profiles) {
     this.search = search;
     this.searchUi = searchUi;
     this.scheduler = scheduler;
-    this.selectionHandler = selectionHandler;
+    this.actionHandler = actionHandler;
+    this.profiles = profiles;
   }
 
   /**
@@ -102,12 +113,15 @@ public final class SearchPresenter
    *
    * @param model model to present
    * @param view view to render into
-   * @param selectionHandler handler for selection actions
+   * @param actionHandler handler for actions
+   * @param profileEventsDispatcher the dispatcher of profile events.
    */
   public static SearchPresenter create(
-      Search model, SearchPanelView view, WaveSelectionHandler selectionHandler) {
+      Search model, SearchPanelView view, WaveActionHandler actionHandler,
+      SourcesEvents<ProfileListener> profileEventsDispatcher) {
     SearchPresenter presenter = new SearchPresenter(
-        SchedulerInstance.getHighPriorityTimer(), model, view, selectionHandler);
+        SchedulerInstance.getHighPriorityTimer(), model, view, actionHandler,
+        profileEventsDispatcher);
     presenter.init();
     return presenter;
   }
@@ -120,6 +134,7 @@ public final class SearchPresenter
     initSearchBox();
     render();
     search.addListener(this);
+    profiles.addListener(this);
     searchUi.init(this);
     searchUi.getSearch().init(this);
 
@@ -136,6 +151,7 @@ public final class SearchPresenter
     searchUi.getSearch().reset();
     searchUi.reset();
     search.removeListener(this);
+    profiles.removeListener(this);
   }
 
   /**
@@ -148,7 +164,7 @@ public final class SearchPresenter
         group.addClickButton(), new ToolbarClickButton.Listener() {
           @Override
           public void onClicked() {
-            ClientEvents.get().fireEvent(WaveCreationEvent.CREATE_NEW_WAVE);
+            actionHandler.onCreateWave();
 
             // HACK(hearnden): To mimic live search, fire a search poll
             // reasonably soon (500ms) after creating a wave. This will be unnecessary
@@ -190,7 +206,6 @@ public final class SearchPresenter
    * Renders the paging information into the title bar.
    */
   private void renderTitle() {
-    int resultStart = 0;
     int resultEnd = querySize;
     String totalStr;
     if (search.getTotal() != Search.UNKNOWN_SIZE) {
@@ -244,7 +259,7 @@ public final class SearchPresenter
    * Invokes the wave-select action on the currently selected digest.
    */
   private void openSelected() {
-    selectionHandler.onWaveSelected(digestUis.get(selected).getWaveId());
+    actionHandler.onWaveSelected(digestUis.get(selected).getWaveId());
   }
 
   @Override
@@ -311,5 +326,15 @@ public final class SearchPresenter
     if (!scheduler.isScheduled(renderer)) {
       scheduler.schedule(renderer);
     }
+  }
+
+  @Override
+  public void onProfileUpdated(Profile profile) {
+    // NOTE: Search panel will be re-rendered once for every profile that comes
+    // back to the client. If this causes an efficiency problem then have the
+    // SearchPanelRenderer to be the profile listener, rather than
+    // SearchPresenter, and make it stateful. Have it remember which digests
+    // have used which profiles in their renderings.
+    renderLater();
   }
 }

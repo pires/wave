@@ -17,7 +17,7 @@
 
 package org.waveprotocol.box.webclient.client;
 
-import org.waveprotocol.box.common.comms.ProtocolWaveletUpdate;
+import org.waveprotocol.box.common.comms.WaveClientRpc.ProtocolWaveletUpdate;
 import org.waveprotocol.box.common.comms.jso.ProtocolOpenRequestJsoImpl;
 import org.waveprotocol.box.common.comms.jso.ProtocolSubmitRequestJsoImpl;
 import org.waveprotocol.wave.model.id.IdFilter;

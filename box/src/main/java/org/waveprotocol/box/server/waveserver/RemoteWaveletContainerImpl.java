@@ -23,11 +23,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.ValueFuture;
+import com.google.common.util.concurrent.SettableFuture;
 import com.google.protobuf.ByteString;
 import com.google.protobuf.InvalidProtocolBufferException;
 
-import org.jivesoftware.util.Base64;
+import org.jivesoftware.smack.util.Base64;
 import org.waveprotocol.box.server.common.CoreWaveletOperationSerializer;
 import org.waveprotocol.box.server.waveserver.CertificateManager.SignerInfoPrefetchResultListener;
 import org.waveprotocol.wave.crypto.SignatureException;
@@ -52,6 +52,7 @@ import org.waveprotocol.wave.util.logging.Log;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -74,18 +75,18 @@ class RemoteWaveletContainerImpl extends WaveletContainerImpl implements RemoteW
    * constructor.
    */
   public RemoteWaveletContainerImpl(WaveletName waveletName, WaveletNotificationSubscriber notifiee,
-      ListenableFuture<? extends WaveletState> waveletStateFuture) {
+      ListenableFuture<? extends WaveletState> waveletStateFuture,
+      Executor storageContinuationExecutor) {
     // We pass here null for waveDomain because you have to be explicit
     // participant on remote wavelet to have access permission.
-    // TODO (Yuri Z.): check if the assumption above is correct.
-    super(waveletName, notifiee, waveletStateFuture, null);
+    super(waveletName, notifiee, waveletStateFuture, null, storageContinuationExecutor);
   }
 
   @Override
   public ListenableFuture<Void> update(final List<ByteString> deltas,
       final String domain, final WaveletFederationProvider federationProvider,
       final CertificateManager certificateManager) {
-    ValueFuture<Void> futureResult = ValueFuture.create();
+    SettableFuture<Void> futureResult = SettableFuture.create();
     internalUpdate(deltas, domain, federationProvider, certificateManager, futureResult);
     return futureResult;
   }
@@ -102,7 +103,7 @@ class RemoteWaveletContainerImpl extends WaveletContainerImpl implements RemoteW
 
   private void internalUpdate(final List<ByteString> deltas,
       final String domain, final WaveletFederationProvider federationProvider,
-      final CertificateManager certificateManager, final ValueFuture<Void> futureResult) {
+      final CertificateManager certificateManager, final SettableFuture<Void> futureResult) {
     // Turn raw serialised ByteStrings in to a more useful representation
     final List<ByteStringMessage<ProtocolAppliedWaveletDelta>> appliedDeltas = Lists.newArrayList();
     for (ByteString delta : deltas) {
@@ -172,7 +173,7 @@ class RemoteWaveletContainerImpl extends WaveletContainerImpl implements RemoteW
   private void internalUpdateAfterSignerInfoRetrieval(
       List<ByteStringMessage<ProtocolAppliedWaveletDelta>> appliedDeltas,
       final String domain, final WaveletFederationProvider federationProvider,
-      final CertificateManager certificateManager, final ValueFuture<Void> futureResult) {
+      final CertificateManager certificateManager, final SettableFuture<Void> futureResult) {
     LOG.info("Passed signer info check, now applying all " + appliedDeltas.size() + " deltas");
     acquireWriteLock();
     try {

@@ -28,6 +28,7 @@ import org.waveprotocol.box.server.authentication.PasswordDigest;
 import org.waveprotocol.box.server.gxp.UserRegistrationPage;
 import org.waveprotocol.box.server.persistence.AccountStore;
 import org.waveprotocol.box.server.persistence.PersistenceException;
+import org.waveprotocol.box.server.robots.agent.welcome.WelcomeRobot;
 import org.waveprotocol.wave.model.wave.InvalidParticipantAddress;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.util.logging.Log;
@@ -42,21 +43,31 @@ import javax.servlet.http.HttpServletResponse;
 
 /**
  * The user registration servlet allows new users to register accounts.
- * 
+ *
  * @author josephg@gmail.com (Joseph Gentle)
  */
+@SuppressWarnings("serial")
 @Singleton
 public final class UserRegistrationServlet extends HttpServlet {
+
   private final AccountStore accountStore;
   private final String domain;
-  
+  private final WelcomeRobot welcomeBot;
+  private final boolean registrationDisabled;
+  private final String analyticsAccount;
+
   private final Log LOG = Log.get(UserRegistrationServlet.class);
 
   @Inject
   public UserRegistrationServlet(AccountStore accountStore,
-      @Named(CoreSettings.WAVE_SERVER_DOMAIN) String domain) {
+      @Named(CoreSettings.WAVE_SERVER_DOMAIN) String domain, WelcomeRobot welcomeBot,
+      @Named(CoreSettings.DISABLE_REGISTRATION) boolean registrationDisabled,
+      @Named(CoreSettings.ANALYTICS_ACCOUNT) String analyticsAccount) {
     this.accountStore = accountStore;
     this.domain = domain;
+    this.welcomeBot = welcomeBot;
+    this.registrationDisabled = registrationDisabled;
+    this.analyticsAccount = analyticsAccount;
   }
 
   @Override
@@ -64,21 +75,24 @@ public final class UserRegistrationServlet extends HttpServlet {
     writeRegistrationPage("", AuthenticationServlet.RESPONSE_STATUS_NONE, req.getLocale(), resp);
   }
 
-  @SuppressWarnings("unchecked")
   @Override
   protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     req.setCharacterEncoding("UTF-8");
-    String message =
-        tryCreateUser(req.getParameter(HttpRequestBasedCallbackHandler.ADDRESS_FIELD),
-            req.getParameter(HttpRequestBasedCallbackHandler.PASSWORD_FIELD));
-    String responseType = AuthenticationServlet.RESPONSE_STATUS_SUCCESS;
 
-    if (message != null) {
+    String message = null;
+    String responseType;
+    if (!registrationDisabled) {
+    message = tryCreateUser(req.getParameter(HttpRequestBasedCallbackHandler.ADDRESS_FIELD),
+                  req.getParameter(HttpRequestBasedCallbackHandler.PASSWORD_FIELD));
+    }
+
+    if (message != null || registrationDisabled) {
       resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
       responseType = AuthenticationServlet.RESPONSE_STATUS_FAILED;
     } else {
       message = "Registration complete.";
       resp.setStatus(HttpServletResponse.SC_OK);
+      responseType = AuthenticationServlet.RESPONSE_STATUS_SUCCESS;
     }
 
     writeRegistrationPage(message, responseType, req.getLocale(), resp);
@@ -89,7 +103,6 @@ public final class UserRegistrationServlet extends HttpServlet {
    * returns a string containing an error message. On success, returns null.
    */
   private String tryCreateUser(String username, String password) {
-    String message = null;
     ParticipantId id = null;
 
     try {
@@ -132,14 +145,18 @@ public final class UserRegistrationServlet extends HttpServlet {
     }
 
     HumanAccountDataImpl account =
-        new HumanAccountDataImpl(id, new PasswordDigest(password.toCharArray()));
+      new HumanAccountDataImpl(id, new PasswordDigest(password.toCharArray()));
     try {
       accountStore.putAccount(account);
     } catch (PersistenceException e) {
       LOG.severe("Failed to create new account for " + id, e);
       return "An unexpected error occured while trying to create the account";
     }
-
+    try {
+      welcomeBot.greet(account.getId());
+    } catch (IOException e) {
+      LOG.warning("Failed to create a welcome wavelet for " + id, e);
+    }
     return null;
   }
 
@@ -148,6 +165,6 @@ public final class UserRegistrationServlet extends HttpServlet {
     dest.setCharacterEncoding("UTF-8");
     dest.setContentType("text/html;charset=utf-8");
     UserRegistrationPage.write(dest.getWriter(), new GxpContext(locale), domain, message,
-        responseType);
+        responseType, registrationDisabled, analyticsAccount);
   }
 }

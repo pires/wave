@@ -42,12 +42,28 @@ public class CoreSettings {
   public static final String ACCOUNT_STORE_DIRECTORY = "account_store_directory";
   public static final String DELTA_STORE_TYPE = "delta_store_type";
   public static final String DELTA_STORE_DIRECTORY = "delta_store_directory";
+  public static final String SESSIONS_STORE_DIRECTORY = "sessions_store_directory";
   public static final String FLASHSOCKET_POLICY_PORT = "flashsocket_policy_port";
   public static final String USE_SOCKETIO = "use_socketio";
   public static final String GADGET_SERVER_HOSTNAME = "gadget_server_hostname";
   public static final String GADGET_SERVER_PORT = "gadget_server_port";
   public static final String GADGET_SERVER_PATH = "gadget_server_path";
-  
+  public static final String ADMIN_USER = "admin_user";
+  public static final String WELCOME_WAVE_ID = "welcome_wave_id";
+  public static final String LISTENER_EXECUTOR_THREAD_COUNT = "listener_executor_thread_count";
+  public static final String WAVELET_LOAD_EXECUTOR_THREAD_COUNT = "wavelet_load_executor_thread_count";
+  public static final String DELTA_PERSIST_EXECUTOR_THREAD_COUNT = "delta_persist_executor_thread_count";
+  public static final String STORAGE_CONTINUATION_EXECUTOR_THREAD_COUNT = "storage_continuation_executor_thread_count";
+  public static final String LOOKUP_EXECUTOR_THREAD_COUNT = "lookup_executor_thread_count";
+  public static final String DISABLE_REGISTRATION = "disable_registration";
+  public static final String ENABLE_SSL = "enable_ssl";
+  public static final String SSL_KEYSTORE_PATH = "ssl_keystore_path";
+  public static final String SSL_KEYSTORE_PASSWORD = "ssl_keystore_password";
+  public static final String ENABLE_IMPORT = "enable_import";
+  public static final String SEARCH_TYPE = "search_type";
+  public static final String INDEX_DIRECTORY = "index_directory";
+  public static final String ANALYTICS_ACCOUNT = "analytics_account";
+
   @Setting(name = WAVE_SERVER_DOMAIN)
   private static String waveServerDomain;
 
@@ -114,6 +130,12 @@ public class CoreSettings {
       defaultValue = "_deltas")
   private static String deltaStoreDirectory;
 
+  @Setting(name = SESSIONS_STORE_DIRECTORY,
+      description = "Location on disk where the user sessions are persisted. Must be writeable by the "
+          + "wave-in-a-box process.",
+      defaultValue = "_sessions")
+  private static String sessionsStoreDirectory;
+
   @Setting(name = FLASHSOCKET_POLICY_PORT,
       description = "Port on which to listen for Flashsocket policy requests.",
       defaultValue = "843")
@@ -130,8 +152,72 @@ public class CoreSettings {
   @Setting(name = GADGET_SERVER_PORT, description = "The port of the gadget server.",
       defaultValue = "80")
   private static int gadgetServerPort;
-  
+
   @Setting(name = GADGET_SERVER_PATH, description = "The URL path of the gadget server.",
       defaultValue = "/gadgets")
   private static String gadgetServerPath;
+
+  @Setting(name = ADMIN_USER, description = "The admin user id for this server.",
+      defaultValue = "@example.com")
+  private static String adminUser;
+
+  @Setting(name = WELCOME_WAVE_ID, description = "The welcome wave id.",
+      defaultValue = "UNDEFINED")
+  private static String welcomeWaveId;
+
+  @Setting(name = LISTENER_EXECUTOR_THREAD_COUNT,
+      description = "The number of threads to process wavelet updates.",
+      defaultValue = "1")
+  private static int listenerExecutorThreadCount;
+
+  @Setting(name = WAVELET_LOAD_EXECUTOR_THREAD_COUNT,
+      description = "The number of threads for loading wavelets.",
+      defaultValue = "1")
+  private static int waveletLoadExecutorThreadCount;
+
+  @Setting(name = DELTA_PERSIST_EXECUTOR_THREAD_COUNT,
+      description = "The number of threads to persist deltas.",
+      defaultValue = "1")
+  private static int deltaPersistExecutorThreadCount;
+
+  @Setting(name = STORAGE_CONTINUATION_EXECUTOR_THREAD_COUNT,
+      description = "The number of threads to perform post wavelet loading logic.",
+      defaultValue = "1")
+  private static int storageContinuationExecutorThreadCount;
+
+  @Setting(name = LOOKUP_EXECUTOR_THREAD_COUNT,
+      description = "The number of threads to perform post wavelet loading logic.",
+      defaultValue = "1")
+  private static int lookupExecutorThreadCount;
+
+  @Setting(name = DISABLE_REGISTRATION,
+      description = "Prevents the register page from being available to anyone", defaultValue = "false")
+  private static boolean disableRegistration;
+
+  @Setting(name = ENABLE_SSL,
+      description = "Enables SSL protocol on all address/port combinations", defaultValue = "false")
+  private static boolean enableSsl;
+
+  @Setting(name = SSL_KEYSTORE_PATH,
+      description = "Path to the keystore containing SSL certificase to server", defaultValue = "./wiab.ks")
+  private static String sslKeystorePath;
+
+  @Setting(name = SSL_KEYSTORE_PASSWORD,
+      description = "Password to the SSL keystore", defaultValue = "")
+  private static String sslKeystorePassword;
+
+  @Setting(name = ENABLE_IMPORT,
+      description = "Enable import servlet at <Server URL>/import", defaultValue = "false")
+  private static boolean enableImport;
+
+  @Setting(name = INDEX_DIRECTORY,
+      description = "Location on disk where the index is persisted", defaultValue = "_indexes")
+  private static String indexDirectory;
+
+  @Setting(name = SEARCH_TYPE,
+      description = "The wave search type", defaultValue = "lucene")
+  private static String searchType;
+
+  @Setting(name = ANALYTICS_ACCOUNT, description = "Google analytics id")
+  private static String analyticsAccount;
 }
