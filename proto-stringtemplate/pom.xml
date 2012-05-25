@@ -12,6 +12,16 @@
   <artifactId>proto-stringtemplate</artifactId>
   <name>proto-stringtemplate</name>
 
+  <properties>
+    <templates>'"${project.build.sourceDirectory}org/waveprotocol/pst/templates/api/api.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/builder/builder.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/pojo/pojo.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/jso/jso.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/util/util.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/gson/gson.st"
+      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/proto/proto.st"'</templates>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>org.waveprotocol.box</groupId>
@@ -34,8 +44,79 @@
       <groupId>org.antlr</groupId>
       <artifactId>stringtemplate</artifactId>
       <version>3.2</version>
-      <scope>compile</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.dstovall</groupId>
+        <artifactId>onejar-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>one-jar</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      
+      <!-- TODO  -->
+      <!-- The following plugin execution has been commented because it's throwing a ClassNotFoundException.-->
+      <!-- Going to test with one-jar and then get back to fix this. -->
+      
+      <!-- <plugin> -->
+      <!-- <groupId>org.codehaus.mojo</groupId> -->
+      <!-- <artifactId>exec-maven-plugin</artifactId> -->
+      <!-- <version>1.2.1</version> -->
+      <!-- <executions> -->
+      <!-- <execution> -->
+      <!-- <phase>package</phase> -->
+      <!-- <goals> -->
+      <!-- <goal>java</goal> -->
+      <!-- </goals> -->
+      <!-- </execution> -->
+      <!-- </executions> -->
+      <!-- <configuration> -->
+      <!-- <mainClass>org.waveprotocol.pst.PstMain</mainClass> -->
+      <!-- <commandlineArgs>-s pst -d lixo -f -->
+      <!-- ${basedir}/../proto/target/classes/org/waveprotocol/box/common/comms/WaveClientRpc.class -->
+      <!-- ${templates}</commandlineArgs> -->
+      <!-- </configuration> -->
+      <!-- </plugin> -->
+      
+      <!-- Unfortunately, this doesn't work as well!! WTH is going on? -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>exec</goal>
+            </goals>
+          </execution>
+        </executions>
+        <configuration>
+          <executable>java</executable>
+          <workingDirectory>${basedir}/target</workingDirectory>
+          <commandlineArgs>-jar ${project.artifactId}-${project.version}.one-jar.jar -s pst -d TRASH -f ${basedir}/../proto/target/classes/org/waveprotocol/box/common/comms/WaveClientRpc.class ${templates}</commandlineArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
 
 </project>

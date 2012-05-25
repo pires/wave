@@ -248,6 +248,21 @@
           <artifactId>maven-antrun-plugin</artifactId>
           <version>1.7</version>
         </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>2.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.dstovall</groupId>
+          <artifactId>onejar-maven-plugin</artifactId>
+          <version>1.4.4</version>
+        </plugin>
+        <plugin>
+          <groupId>org.codehaus.mojo</groupId>
+          <artifactId>gwt-maven-plugin</artifactId>
+          <version>2.4.0</version>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
@@ -257,6 +272,10 @@
       <id>protostuff-repo</id>
       <name>protostuff-repo</name>
       <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
+    </pluginRepository>
+    <pluginRepository>
+      <id>onejar-maven-plugin.googlecode.com</id>
+      <url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
     </pluginRepository>
   </pluginRepositories>
 
@@ -289,6 +308,7 @@
       <name>protostuff-repo</name>
       <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
     </repository>
+
     <repository>
       <id>wave-local</id>
       <layout>default</layout>

@@ -22,6 +22,7 @@ import com.google.common.base.Predicate;
 import com.google.common.io.CharStreams;
 import com.google.common.io.Files;
 import com.google.protobuf.Descriptors.FileDescriptor;
+import com.google.protobuf.Descriptors.FileDescriptor.InternalDescriptorAssigner;
 
 import java.io.File;
 import java.io.IOException;
