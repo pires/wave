@@ -16,6 +16,12 @@ For now, we're just focusing on building every little piece of Wave. And for tha
 
 _mvn clean package_
 
+Be sure to have _protoc_ installed. On Mac OS X with _brew_ just run the following command:
+
+_brew install protoc_
+
+And then edit build-proto.properties to match your installation.
+
 ## Test ##
 
 ### TODO ###
