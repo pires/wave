@@ -13,13 +13,9 @@
   <name>proto-stringtemplate</name>
 
   <properties>
-    <templates>"${project.build.sourceDirectory}org/waveprotocol/pst/templates/api/api.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/builder/builder.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/pojo/pojo.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/jso/jso.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/util/util.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/gson/gson.st"
-      "${project.build.sourceDirectory}/org/waveprotocol/pst/templates/proto/proto.st"</templates>
+  	<resourcesDirectory>${basedir}/src/main/resources</resourcesDirectory>
+  	<templatesBaseDir>${resourcesDirectory}/org/waveprotocol/pst/templates</templatesBaseDir>
+    <templates>"${templatesBaseDir}/api/api.st" "${templatesBaseDir}/builder/builder.st" "${templatesBaseDir}/pojo/pojo.st" "${templatesBaseDir}/jso/jso.st" "${templatesBaseDir}/util/util.st" "${templatesBaseDir}/gson/gson.st" "${templatesBaseDir}/proto/proto.st"</templates>
   </properties>
 
   <dependencies>
