@@ -13,9 +13,10 @@
   <name>proto-stringtemplate</name>
 
   <properties>
-  	<resourcesDirectory>${basedir}/src/main/resources</resourcesDirectory>
-  	<templatesBaseDir>${resourcesDirectory}/org/waveprotocol/pst/templates</templatesBaseDir>
+    <resourcesDirectory>${basedir}/src/main/resources</resourcesDirectory>
+    <templatesBaseDir>${resourcesDirectory}/org/waveprotocol/pst/templates</templatesBaseDir>
     <templates>"${templatesBaseDir}/api/api.st" "${templatesBaseDir}/builder/builder.st" "${templatesBaseDir}/pojo/pojo.st" "${templatesBaseDir}/jso/jso.st" "${templatesBaseDir}/util/util.st" "${templatesBaseDir}/gson/gson.st" "${templatesBaseDir}/proto/proto.st"</templates>
+    <genFolder>${basedir}/../box/gen/main/java</genFolder>
   </properties>
 
   <dependencies>
@@ -56,60 +57,90 @@
           </archive>
         </configuration>
       </plugin>
-<!--       <plugin> -->
-<!--         <groupId>org.dstovall</groupId> -->
-<!--         <artifactId>onejar-maven-plugin</artifactId> -->
-<!--         <executions> -->
-<!--           <execution> -->
-<!--             <phase>package</phase> -->
-<!--             <goals> -->
-<!--               <goal>one-jar</goal> -->
-<!--             </goals> -->
-<!--           </execution> -->
-<!--         </executions> -->
-<!--       </plugin> -->
-      
-      <!-- TODO  -->
-      <!-- The following plugin execution has been commented because it's throwing a ClassNotFoundException.-->
-      <!-- Going to test with one-jar and then get back to fix this. -->
-      
-	<plugin>
-		<groupId>org.codehaus.mojo</groupId>
-		<artifactId>exec-maven-plugin</artifactId>
-		<version>1.2.1</version>
-		<executions>
-			<execution>
-				<phase>package</phase>
-				<goals>
-					<goal>java</goal>
-				</goals>
-			</execution>
-		</executions>
-		<configuration>
-			<mainClass>org.waveprotocol.pst.PstMain</mainClass>
-			<commandlineArgs>-s pst -d lixo -f org.waveprotocol.box.common.comms.WaveClientRpc ${templates}</commandlineArgs>
-          </configuration>
-	</plugin>
-      
-      <!-- Unfortunately, this doesn't work as well!! WTH is going on? -->
-<!--       <plugin> -->
-<!--         <groupId>org.codehaus.mojo</groupId> -->
-<!--         <artifactId>exec-maven-plugin</artifactId> -->
-<!--         <version>1.2.1</version> -->
-<!--         <executions> -->
-<!--           <execution> -->
-<!--             <phase>package</phase> -->
-<!--             <goals> -->
-<!--               <goal>exec</goal> -->
-<!--             </goals> -->
-<!--           </execution> -->
-<!--         </executions> -->
-<!--         <configuration> -->
-<!--           <executable>java</executable> -->
-<!--           <workingDirectory>${basedir}/target</workingDirectory> -->
-<!--           <commandlineArgs>-jar ${project.artifactId}-${project.version}.one-jar.jar -s pst -d TRASH -f ${basedir}/../proto/target/classes/org/waveprotocol/box/common/comms/WaveClientRpc.class ${templates}</commandlineArgs> -->
-<!--         </configuration> -->
-<!--       </plugin> -->
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>WaveClientRpc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.box.common.comms.WaveClientRpc ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>SearchProto</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.box.search.SearchProto ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ProfilesProto</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.box.profile.ProfilesProto ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Rpc</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.box.server.rpc.Rpc ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>FederationProto</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.wave.federation.Proto ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>ConcurrencyControlCS</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.wave.concurrencycontrol.ClientServer ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
+            <id>Diff</id>
+            <phase>package</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.wave.diff.Diff ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 

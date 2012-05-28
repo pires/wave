@@ -72,6 +72,8 @@
                 <protoc
                   proto="${src.dir}/org/waveprotocol/box/common/comms/waveclient-rpc.proto" />
                 <protoc
+                  proto="${src.dir}/org/waveprotocol/box/profile/profiles.proto" />
+                <protoc
                   proto="${src.dir}/org/waveprotocol/box/search/search.proto" />
                 <protoc
                   proto="${src.dir}/org/waveprotocol/box/server/persistence/protos/account-store.proto" />
@@ -87,6 +89,8 @@
                   proto="${src.dir}/org/waveprotocol/wave/federation/federation_error.protodevel" />
                 <protoc
                   proto="${src.dir}/org/waveprotocol/protobuf/extensions.proto" />
+                <protoc
+                  proto="${src.dir}/org/waveprotocol/wave/diff/diff.proto" />
               </target>
               <sourceRoot>${gen.dir}</sourceRoot>
             </configuration>
@@ -97,62 +101,6 @@
         </executions>
       </plugin>
     </plugins>
-    <pluginManagement>
-    	<plugins>
-    		<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
-    		<plugin>
-    			<groupId>org.eclipse.m2e</groupId>
-    			<artifactId>lifecycle-mapping</artifactId>
-    			<version>1.0.0</version>
-    			<configuration>
-    				<lifecycleMappingMetadata>
-    					<pluginExecutions>
-    						<pluginExecution>
-    							<pluginExecutionFilter>
-    								<groupId>
-    									org.apache.maven.plugins
-    								</groupId>
-    								<artifactId>
-    									maven-antrun-plugin
-    								</artifactId>
-    								<versionRange>[1.7,)</versionRange>
-    								<goals>
-    									<goal>run</goal>
-    								</goals>
-    							</pluginExecutionFilter>
-    							<action>
-					                <execute >
-					                  <runOnIncremental>false</runOnIncremental>
-					                </execute >
-    							</action>
-    						</pluginExecution>
-    						<pluginExecution>
-    							<pluginExecutionFilter>
-    								<groupId>org.codehaus.mojo</groupId>
-    								<artifactId>
-    									properties-maven-plugin
-    								</artifactId>
-    								<versionRange>
-    									[1.0-alpha-2,)
-    								</versionRange>
-    								<goals>
-    									<goal>
-    										read-project-properties
-    									</goal>
-    								</goals>
-    							</pluginExecutionFilter>
-    							<action>
-					                <execute >
-					                  <runOnIncremental>false</runOnIncremental>
-					                </execute >
-    							</action>
-    						</pluginExecution>
-    					</pluginExecutions>
-    				</lifecycleMappingMetadata>
-    			</configuration>
-    		</plugin>
-    	</plugins>
-    </pluginManagement>
   </build>
 
 </project>
