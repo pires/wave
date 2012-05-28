@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+  <groupId>com.sixfire</groupId>
+  <artifactId>java-websocket-client</artifactId>
+  <versioning>
+    <release>hyxie-75</release>
+    <versions>
+      <version>hyxie-75</version>
+    </versions>
+    <lastUpdated>20120528095935</lastUpdated>
+  </versioning>
+</metadata>
