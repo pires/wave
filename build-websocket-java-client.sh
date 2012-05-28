@@ -8,7 +8,7 @@ TITLE="WebSocket Java Client"
 SRC=websocket-java-client
 
 # checkout WebSocket Java Client source
-echo -n "Checking out $TITLE source to $WAVE_SRC/socket-io-java.. "
+echo -n "Checking out $TITLE source to $WAVE_SRC/$SRC.. "
 $GIT clone -q git://github.com/pires/Java-WebSocket-client.git $SRC
 echo "Done"
 

@@ -276,6 +276,12 @@
 
   <repositories>
     <repository>
+      <id>wave-local</id>
+      <layout>default</layout>
+      <name>wave local</name>
+      <url>file:///${basedir}/../repo/</url>
+    </repository>
+    <repository>
       <id>mojo-codehaus</id>
       <name>Mojo Project Repository</name>
       <url>http://repository.codehaus.org/</url>
@@ -286,29 +292,10 @@
       <url>http://oss.sonatype.org/content/repositories/google-releases/
             </url>
     </repository>
-    <!-- Socket.IO -->
-    <repository>
-      <id>mc-snapshot</id>
-      <name>mc-snapshot</name>
-      <url>http://mc-repo.googlecode.com/svn/maven2/snapshots</url>
-      <snapshots>
-        <enabled>true</enabled>
-      </snapshots>
-      <releases>
-        <enabled>false</enabled>
-      </releases>
-    </repository>
     <repository>
       <id>protostuff-repo</id>
       <name>protostuff-repo</name>
       <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
-    </repository>
-
-    <repository>
-      <id>wave-local</id>
-      <layout>default</layout>
-      <name>wave local</name>
-      <url>file:///${basedir}/../repo/</url>
     </repository>
   </repositories>
 
