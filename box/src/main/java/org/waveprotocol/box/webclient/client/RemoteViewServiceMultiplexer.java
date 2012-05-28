@@ -17,7 +17,9 @@
 
 package org.waveprotocol.box.webclient.client;
 
-import org.waveprotocol.box.common.comms.WaveClientRpc.ProtocolWaveletUpdate;
+import java.util.Map;
+
+import org.waveprotocol.box.common.comms.ProtocolWaveletUpdate;
 import org.waveprotocol.box.common.comms.jso.ProtocolOpenRequestJsoImpl;
 import org.waveprotocol.box.common.comms.jso.ProtocolSubmitRequestJsoImpl;
 import org.waveprotocol.wave.model.id.IdFilter;
@@ -27,8 +29,6 @@ import org.waveprotocol.wave.model.id.WaveId;
 import org.waveprotocol.wave.model.id.WaveletId;
 import org.waveprotocol.wave.model.id.WaveletName;
 import org.waveprotocol.wave.model.util.CollectionUtils;
-
-import java.util.Map;
 
 /**
  * Distributes the incoming update stream (from wave-in-a-box's client/server
