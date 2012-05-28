@@ -159,6 +159,11 @@
       <artifactId>lucene-core</artifactId>
       <version>3.5.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.sixfire</groupId>
+      <artifactId>java-websocket-client</artifactId>
+      <version>hyxie-75</version>
+    </dependency>
   </dependencies>
 
   <build>
