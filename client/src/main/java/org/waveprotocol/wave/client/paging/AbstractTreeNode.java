@@ -73,11 +73,21 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
   public T getPreviousSibling() {
     return prev;
   }
+  
+  protected T setNextSibling(T prev) {
+	  this.prev = prev;
+	  return self();
+  }
+  
+  protected T setPreviousSibling(T next) {
+	  this.next = next;
+	  return self();
+  }
 
   /**
    * Sets the external structural fields of this node.
    */
-  private T set(T parent, T prev, T next) {
+  protected T set(T parent, T prev, T next) {
     this.parent = parent;
     this.prev = prev;
     this.next = next;
@@ -92,7 +102,7 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
   public T prepend(T child) {
     return first = ((first == null) // \u2620
         ? (last = child.set(self(), null, null)) // \u2620
-        : (first.prev = child.set(self(), null, first)));
+        : (first.setPreviousSibling(child.set(self(), null, first))));
   }
 
   /**
@@ -103,7 +113,7 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
   public T append(T child) {
     return last = ((last == null) // \u2620
         ? (first = child.set(self(), null, null)) // \u2620
-        : (last.next = child.set(self(), last, null)));
+        : (last.setNextSibling(child.set(self(), last, null))));
   }
 
   /**
@@ -113,10 +123,10 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
    * @param child node to insert
    */
   public T insertBefore(T ref, T child) {
-    Preconditions.checkArgument(ref == null || ref.parent == this);
+    Preconditions.checkArgument(ref == null || ref.getParent() == this);
     return ref == null ? append(child) // \u2620
         : ref == first ? prepend(child) // \u2620
-            : (ref.prev.next = (ref.prev = child.set(self(), ref.prev, ref)));
+            : (ref.getPreviousSibling().setNextSibling(ref.setPreviousSibling(child.set(self(), ref.getPreviousSibling(), ref))));
   }
 
   /**
@@ -126,10 +136,10 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
    * @param child node to insert
    */
   public T insertAfter(T ref, T child) {
-    Preconditions.checkArgument(ref == null || ref.parent == this);
+    Preconditions.checkArgument(ref == null || ref.getParent() == this);
     return ref == null ? prepend(child) // \u2620
         : (ref == last ? append(child) // \u2620
-            : (ref.next.prev = (ref.next = child.set(self(), ref, ref.next))));
+            : (ref.getNextSibling().setPreviousSibling(ref.setNextSibling(child.set(self(), ref, ref.getNextSibling())))));
   }
 
   /**
@@ -147,17 +157,17 @@ public abstract class AbstractTreeNode<T extends AbstractTreeNode<T>> implements
    *
    * @param child node to remove
    */
-  private void removeChild(T child) {
+  protected void removeChild(T child) {
     if (child == first) {
-      first = child.next;
+      first = child.getNextSibling();
     } else {
-      child.prev.next = child.next;
+      child.getPreviousSibling().setNextSibling(child.getNextSibling());
     }
 
     if (child == last) {
-      last = child.prev;
+      last = child.getPreviousSibling();
     } else {
-      child.next.prev = child.prev;
+      child.getNextSibling().setPreviousSibling(child.getPreviousSibling());
     }
   }
 }
