@@ -263,10 +263,6 @@
       <name>protostuff-repo</name>
       <url>http://protostuff.googlecode.com/svn/repos/maven2</url>
     </pluginRepository>
-    <pluginRepository>
-      <id>onejar-maven-plugin.googlecode.com</id>
-      <url>http://onejar-maven-plugin.googlecode.com/svn/mavenrepo</url>
-    </pluginRepository>
   </pluginRepositories>
 
   <repositories>
