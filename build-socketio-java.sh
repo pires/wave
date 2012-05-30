@@ -1,5 +1,8 @@
 #!/bin/bash
 
+command -v git >/dev/null 2>&1 || { echo "I require Git client but it's not installed. Aborting." >&2; exit 1; }
+command -v mvn >/dev/null 2>&1 || { echo "I require Maven client but it's not installed. Aborting." >&2; exit 1; }
+
 GIT=`which git`
 MVN=`which mvn`
 WAVE_SRC=$PWD

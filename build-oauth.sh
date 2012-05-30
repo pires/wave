@@ -1,5 +1,8 @@
 #!/bin/bash
 
+command -v svn >/dev/null 2>&1 || { echo "I require Subversion client but it's not installed. Aborting." >&2; exit 1; }
+command -v mvn >/dev/null 2>&1 || { echo "I require Maven client but it's not installed. Aborting." >&2; exit 1; }
+
 SVN=`which svn`
 MVN=`which mvn`
 WAVE_SRC=$PWD
