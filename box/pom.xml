@@ -207,7 +207,7 @@
                 <gxpc srcdir="${basedir}/src/main/java" srcpaths="${basedir}/src/main/java"
                   destdir="${basedir}/target/generated-sources" target="org.waveprotocol.box.server.gxp"
                   i18nwarn="false" />
-                <copy todir="${basedir}/src/main/java">
+                <copy todir="${basedir}/gen/main/java">
                   <fileset dir="${basedir}/target/generated-sources" />
                 </copy>
               </tasks>
