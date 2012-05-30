@@ -12,7 +12,7 @@ fi
 . process-script-args.sh
 
 exec java $DEBUG_FLAGS \
-  -Dorg.eclipse.jetty.util.log.DEBUG=true \
+  -Dorg.eclipse.jetty.LEVEL=DEBUG \
   -Djava.security.auth.login.config=jaas.config \
   -Dwave.server.config=server.config \
   -jar box/target/box-0.3-SNAPSHOT.jar
