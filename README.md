@@ -11,9 +11,17 @@ This way, one expects the project to be easier to understand and faster to build
 
 ### Install Protocol Buffers compiler ###
 
-On Mac OS X (with _brew_) execute: _brew install protobuf_
+On Ubuntu 12.04/Linux Mint 13 execute:
+```
+sudo apt-get install protobuf-compiler
+```
 
-And then edit build-proto.properties to match your installation.
+On Mac OS X (with _brew_) execute:
+```
+brew install protobuf
+```
+
+And then edit _build-proto.properties_ to match your installation.
 
 ## Build ##
 
@@ -29,5 +37,4 @@ _mvn clean package_
 
 ## Troubleshooting ##
 
-1. Can't build _proto-stringtemplates_ project.
-See issue #1.
+Look in the project issues.
