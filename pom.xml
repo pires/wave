@@ -32,7 +32,6 @@
     <module>communication</module>
     <module>concurrencycontrol</module>
     <module>crypto</module>
-    <module>diff</module>
     <module>gwt-util</module>
     <module>media</module>
     <module>migration</module>
@@ -270,7 +269,7 @@
       <id>wave-local</id>
       <layout>default</layout>
       <name>wave local</name>
-      <url>file:///${basedir}/../repo/</url>
+      <url>file://${basedir}/../repo/</url>
     </repository>
     <repository>
       <id>mojo-codehaus</id>
