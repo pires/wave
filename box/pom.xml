@@ -200,7 +200,7 @@
           <execution>
             <phase>generate-sources</phase>
             <configuration>
-              <tasks>
+              <target>
                 <taskdef name="gxpc"
                   classname="com.google.gxp.compiler.ant.GxpcTask"
                   classpathref="maven.compile.classpath" />
@@ -210,7 +210,7 @@
                 <copy todir="${basedir}/gen/main/java">
                   <fileset dir="${basedir}/target/generated-sources" />
                 </copy>
-              </tasks>
+              </target>
             </configuration>
             <goals>
               <goal>run</goal>
