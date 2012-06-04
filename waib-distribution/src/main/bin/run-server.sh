@@ -15,4 +15,4 @@ exec java $DEBUG_FLAGS \
   -Dorg.eclipse.jetty.LEVEL=DEBUG \
   -Djava.security.auth.login.config=jaas.config \
   -Dwave.server.config=server.config \
-  -jar box/target/box-0.3-SNAPSHOT.jar
+  -jar lib/box-0.3-SNAPSHOT.jar
