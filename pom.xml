@@ -36,6 +36,8 @@
     <module>media</module>
     <module>migration</module>
     <module>client</module>
+    <module>web-client-content</module>
+    <module>waib-distribution</module>
   </modules>
 
   <dependencyManagement>
@@ -93,6 +95,11 @@
       <dependency>
         <groupId>com.google.guava</groupId>
         <artifactId>guava</artifactId>
+        <version>${guava.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava-gwt</artifactId>
         <version>${guava.version}</version>
       </dependency>
       <dependency>
@@ -191,6 +198,12 @@
         <version>${socketio.version}</version>
       </dependency>
       <dependency>
+        <groupId>com.glines.socketio</groupId>
+        <artifactId>socketio-core</artifactId>
+        <version>${socketio.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
         <groupId>com.glines.socketio.extension</groupId>
         <artifactId>socketio-extension</artifactId>
         <version>${socketio.version}</version>
@@ -202,8 +215,20 @@
       </dependency>
       <dependency>
         <groupId>com.glines.socketio.extension</groupId>
+        <artifactId>socketio-gwt</artifactId>
+        <version>${socketio.version}</version>
+        <classifier>sources</classifier>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio.extension</groupId>
         <artifactId>socketio-jetty</artifactId>
         <version>${socketio.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>com.glines.socketio.extension</groupId>
+        <artifactId>socketio-jetty</artifactId>
+        <version>${socketio.version}</version>
+        <classifier>sources</classifier>
       </dependency>
 
       <!-- Miscellaneous -->
