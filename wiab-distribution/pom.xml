@@ -9,8 +9,8 @@
     <version>0.3-SNAPSHOT</version>
   </parent>
   <packaging>pom</packaging>
-  <artifactId>waib-distribution</artifactId>
-  <name>waib-distribution</name>
+  <artifactId>wiab-distribution</artifactId>
+  <name>Wave In A Box distributable</name>
 
   <dependencies>
     <dependency>

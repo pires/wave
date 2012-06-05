@@ -10,7 +10,7 @@
   </parent>
   <packaging>war</packaging>
   <artifactId>web-client-content</artifactId>
-  <name>web-client-content</name>
+  <name>Web Client (GWT)</name>
 
   <dependencies>
     <dependency>

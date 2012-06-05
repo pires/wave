@@ -37,7 +37,7 @@
     <module>migration</module>
     <module>client</module>
     <module>web-client-content</module>
-    <module>waib-distribution</module>
+    <module>wiab-distribution</module>
   </modules>
 
   <dependencyManagement>
