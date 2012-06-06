@@ -9,6 +9,7 @@
   <fileSets>
     <fileSet>
       <outputDirectory>/</outputDirectory>
+      <fileMode>0755</fileMode>
       <directory>${basedir}/src/main/bin</directory>
       <includes>
         <include>*.sh</include>
