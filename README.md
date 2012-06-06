@@ -33,7 +33,20 @@ _mvn clean package_
 
 ## Test ##
 
-### TODO ###
+### Run WIAB ###
+
+In order to run the Wave In A Box bundle, be sure to configure your server instance:
+```
+vi wiab-distribution/target/wiab-distribution-0.3-SNAPSHOT/server.config
+```
+
+And then, start the server:
+```
+cd wiab-distribution/target/wiab-distribution-0.3-SNAPSHOT/
+./run-server.sh
+```
+
+Now just point your browser to the host and port you've configured in your _server.config_.
 
 ## Troubleshooting ##
 
