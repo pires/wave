@@ -25,12 +25,17 @@
   </fileSets>
   <dependencySets>
     <dependencySet>
+    <useProjectArtifact>false</useProjectArtifact>
       <outputDirectory>/lib/</outputDirectory>
-      <includes>
-      	<include>org.waveprotocol.box:box:jar</include>
-      </includes>
+      <excludes>
+      	<exclude>org.waveprotocol.box:web-client-content:war</exclude>
+        <exclude>org.apache.ant:*</exclude>
+        <exclude>org.hamcrest:*</exclude>
+        <exclude>org.mockito:*</exclude>
+      </excludes>
     </dependencySet>
     <dependencySet>
+    <useProjectArtifact>false</useProjectArtifact>
       <outputDirectory>/war/</outputDirectory>
       <unpack>true</unpack>
       <includes>
