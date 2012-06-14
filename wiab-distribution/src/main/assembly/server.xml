@@ -30,8 +30,6 @@
       <excludes>
       	<exclude>org.waveprotocol.box:web-client-content:war</exclude>
         <exclude>org.apache.ant:*</exclude>
-        <exclude>org.hamcrest:*</exclude>
-        <exclude>org.mockito:*</exclude>
       </excludes>
     </dependencySet>
     <dependencySet>
