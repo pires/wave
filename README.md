@@ -25,15 +25,30 @@ And then edit _build-proto.properties_ to match your installation.
 
 ## Build ##
 
-### TODO ###
-
-For now, we're just focusing on building every little piece of Wave. And for that, you've got to execute the following command:
-
+Basically, if you want a WIAB JAR file ready to run, you just have to run the following command:
 _mvn clean package_
 
-## Test ##
+This will at some point:
+- Compile _protobuf_ source files (*.proto) into Java code;
+- Compile a _string-template_ parser;
+- Run that parser against template files (*.st) in order to generate more Java code;
+- Compile GXP templates;
+- Compile GWT modules;
+- Create the runnable JAR.
 
-### Run WIAB ###
+Meanwhile, some tests will be executed, while others won't mostly due to the fact they take too long to run, sometimes even hours. *Be aware!!*
+In order to execute them, we provide the following Maven parameters:
+_-Plarge-tests_
+_-Pgwt-tests_
+_-Pmongodb-tests_
+
+For instance,
+```
+mvn clean package -Pmongodb-tests
+```
+will run the regular tests plus the _Mongo DB_ related ones.
+
+## Running WIAB ##
 
 In order to run the Wave In A Box bundle, be sure to configure your server instance:
 ```
