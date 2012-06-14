@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <project
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-  xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>wiab</artifactId>
@@ -283,32 +284,35 @@
           </execution>
         </executions>
       </plugin>
-       <!-- Attach the resources plugin to the prepare-package phase to include the host page & generated javascript files -->
-                <plugin>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <executions>
-                        <execution>
-                            <id>package-generated-javascript</id>
-                            <phase>prepare-package</phase>
-                            <goals>
-                                <goal>copy-resources</goal>
-                            </goals>
-                            <configuration> 
-                                <!-- shove everything the compiler produced into the JAR/META-INF/ folder so that Spring resourceServlet can find it -->
-                                <outputDirectory>${project.build.outputDirectory}/</outputDirectory>
-                                <resources>
-                                    <resource>
-                                        <directory>${project.build.directory}/${project.build.finalName}</directory>
-                                        <includes>
-                                            <include>webclient/**</include>
-                                        </includes>
-                                    </resource>
-                                </resources>
-                            </configuration>
-                        </execution>
-                        
-                    </executions>
-                </plugin>
+      <!-- Attach the resources plugin to the prepare-package phase to include 
+        the host page & generated javascript files -->
+      <plugin>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>2.5</version>
+        <executions>
+          <execution>
+            <id>package-generated-javascript</id>
+            <phase>prepare-package</phase>
+            <goals>
+              <goal>copy-resources</goal>
+            </goals>
+            <configuration>
+              <!-- shove everything the compiler produced into the JAR/META-INF/ 
+                folder so that Spring resourceServlet can find it -->
+              <outputDirectory>${project.build.outputDirectory}/</outputDirectory>
+              <resources>
+                <resource>
+                  <directory>${project.build.directory}/${project.build.finalName}</directory>
+                  <includes>
+                    <include>webclient/**</include>
+                  </includes>
+                </resource>
+              </resources>
+            </configuration>
+          </execution>
+
+        </executions>
+      </plugin>
     </plugins>
   </build>
 
