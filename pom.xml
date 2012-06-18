@@ -10,6 +10,8 @@
   <packaging>pom</packaging>
 
   <name>Wave In A Box</name>
+  <url>http://incubator.apache.org/wave/</url>
+  <description>Wave In A Box is a self contained reference implementation of Wave.</description>
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,6 +23,10 @@
     <socketio.version>0.1-SNAPSHOT</socketio.version>
     <guice.version>3.0</guice.version>
   </properties>
+
+  <prerequisites>
+    <maven>3.0</maven>
+  </prerequisites>
 
   <modules>
     <module>proto</module>
@@ -247,8 +253,13 @@
       <plugins>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-clean-plugin</artifactId>
-          <version>2.5</version>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.1</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>2.8.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -268,7 +279,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>2.3.2</version>
+          <version>2.5.1</version>
           <configuration>
             <source>${java.version}</source>
             <target>${java.version}</target>
@@ -283,6 +294,21 @@
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-antrun-plugin</artifactId>
           <version>1.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>2.5</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.7</version>
+        </plugin>
+        <plugin>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.3.1</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -371,6 +397,24 @@
         </plugin>
       </plugins>
     </pluginManagement>
+    <plugins>
+      <plugin>
+        <artifactId>maven-site-plugin</artifactId>
+        <executions>
+          <execution>
+            <id>attach-descriptor</id>
+            <goals>
+              <goal>attach-descriptor</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>versions-maven-plugin</artifactId>
+        <version>1.3.1</version>
+      </plugin>
+    </plugins>
   </build>
 
   <profiles>
@@ -385,7 +429,7 @@
               <execution>
                 <id>gwt-tests</id>
                 <configuration>
-                  <!-- This is needed to overried the default excludes defined 
+                  <!-- This is needed to override the default excludes defined 
                     above. -->
                   <excludes>
                   </excludes>
@@ -412,7 +456,7 @@
               <execution>
                 <id>large-tests</id>
                 <configuration>
-                  <!-- This is needed to overried the default excludes defined 
+                  <!-- This is needed to override the default excludes defined 
                     above. -->
                   <excludes>
                     <exclude></exclude>
@@ -461,6 +505,74 @@
     </profile>
   </profiles>
 
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-project-info-reports-plugin</artifactId>
+        <version>2.4</version>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-report-plugin</artifactId>
+        <version>2.12</version>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <organization>
+    <name>Apache Software Foundation</name>
+    <url>http://www.apache.org</url>
+  </organization>
+
+  <issueManagement>
+    <system>Jira</system>
+    <url>https://issues.apache.org/jira/browse/WAVE</url>
+  </issueManagement>
+
+  <mailingLists>
+    <mailingList>
+      <name>Wave Developer List</name>
+      <post>wave-dev@incubator.apache.org</post>
+      <subscribe>wave-dev-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>wave-dev-unsubscribe@incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-wave-dev/</archive>
+    </mailingList>
+    <mailingList>
+      <name>Wave Commits List</name>
+      <post>wave-commits@incubator.apache.org</post>
+      <subscribe>wave-commits-subscribe@incubator.apache.org</subscribe>
+      <unsubscribe>wave-commits-unsubscribe@incubator.apache.org</unsubscribe>
+      <archive>http://mail-archives.apache.org/mod_mbox/incubator-wave-commits/</archive>
+    </mailingList>
+  </mailingLists>
+
+  <ciManagement>
+    <system>Jenkins</system>
+    <url>https://builds.apache.org/job/wave-all_tests/</url>
+  </ciManagement>
+
+  <scm>
+    <connection>scm:svn:http://svn.apache.org/repos/asf/incubator/wave/trunk</connection>
+    <developerConnection>scm:svn:https://svn.apache.org/repos/asf/incubator/wave/trunk</developerConnection>
+    <url>http://svn.apache.org/viewvc/incubator/wave/</url>
+  </scm>
+
+  <licenses>
+    <license>
+      <name>Apache 2.0</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0</url>
+    </license>
+  </licenses>
+
+  <distributionManagement>
+    <site>
+      <id>wave.website</id>
+      <name>Apache Wave MAven Site</name>
+      <url>scp://beaver.codehaus.org/home/projects/mojo/public_html/</url>
+    </site>
+  </distributionManagement>
+
   <pluginRepositories>
     <pluginRepository>
       <id>protostuff-repo</id>
@@ -484,8 +596,7 @@
     <repository>
       <id>google-releases</id>
       <name>Google Maven Repository</name>
-      <url>http://oss.sonatype.org/content/repositories/google-releases/
-            </url>
+      <url>http://oss.sonatype.org/content/repositories/google-releases/</url>
     </repository>
     <repository>
       <id>protostuff-repo</id>
