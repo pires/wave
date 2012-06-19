@@ -9,17 +9,22 @@
     <version>0.3-SNAPSHOT</version>
   </parent>
 
-  <artifactId>proto-stringtemplate</artifactId>
-  <name>proto-stringtemplate</name>
+  <artifactId>proto-st</artifactId>
+  <name>proto-st</name>
 
   <properties>
     <resourcesDirectory>${basedir}/src/main/resources</resourcesDirectory>
     <templatesBaseDir>${resourcesDirectory}/org/waveprotocol/pst/templates</templatesBaseDir>
     <templates>"${templatesBaseDir}/api/api.st" "${templatesBaseDir}/builder/builder.st" "${templatesBaseDir}/pojo/pojo.st" "${templatesBaseDir}/jso/jso.st" "${templatesBaseDir}/util/util.st" "${templatesBaseDir}/gson/gson.st" "${templatesBaseDir}/proto/proto.st"</templates>
-    <genFolder>${basedir}/../box/gen/main/java</genFolder>
+    <genFolder>${project.build.directory}/generated-sources</genFolder>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>org.waveprotocol.box</groupId>
+      <artifactId>communication</artifactId>
+      <version>${project.version}</version>
+    </dependency>
     <dependency>
       <groupId>org.waveprotocol.box</groupId>
       <artifactId>proto</artifactId>
@@ -47,6 +52,25 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>build-helper-maven-plugin</artifactId>
+        <version>1.7</version>
+        <executions>
+          <execution>
+            <id>add-source</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>add-source</goal>
+            </goals>
+            <configuration>
+              <sources>
+                <source>${project.build.directory}/generated-sources</source>
+              </sources>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-jar-plugin</artifactId>
         <configuration>
@@ -55,6 +79,9 @@
               <mainClass>org.waveprotocol.pst.PstMain</mainClass>
             </manifest>
           </archive>
+          <excludes>
+            <exclude>/org/waveprotocol/pst/**/*</exclude>
+          </excludes>
         </configuration>
       </plugin>
       <plugin>

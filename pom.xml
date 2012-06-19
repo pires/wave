@@ -30,7 +30,7 @@
 
   <modules>
     <module>proto</module>
-    <module>proto-stringtemplate</module>
+    <module>proto-st</module>
     <module>wave-api</module>
     <module>model</module>
     <module>box</module>
