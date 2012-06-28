@@ -38,13 +38,8 @@
     <module>federation</module>
     <module>common</module>
     <module>communication</module>
-    <module>concurrencycontrol</module>
     <module>crypto</module>
-    <module>gwt-util</module>
-    <module>media</module>
-    <module>migration</module>
-    <module>client</module>
-    <module>web-client-content</module>
+    <module>web-client</module>
     <module>wiab-distribution</module>
   </modules>
 

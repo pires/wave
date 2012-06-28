@@ -28,7 +28,7 @@
     <useProjectArtifact>false</useProjectArtifact>
       <outputDirectory>/lib/</outputDirectory>
       <excludes>
-      	<exclude>org.waveprotocol.box:web-client-content:war</exclude>
+      	<exclude>org.waveprotocol.box:web-client:war</exclude>
         <exclude>org.apache.ant:*</exclude>
       </excludes>
     </dependencySet>
@@ -37,7 +37,7 @@
       <outputDirectory>/war/</outputDirectory>
       <unpack>true</unpack>
       <includes>
-      	<include>org.waveprotocol.box:web-client-content:war</include>
+      	<include>org.waveprotocol.box:web-client:war</include>
       </includes>
     </dependencySet>
   </dependencySets>

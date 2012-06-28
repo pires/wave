@@ -20,7 +20,7 @@
     </dependency>
     <dependency>
       <groupId>org.waveprotocol.box</groupId>
-      <artifactId>web-client-content</artifactId>
+      <artifactId>web-client</artifactId>
       <version>${project.version}</version>
       <type>war</type>
     </dependency>

@@ -34,7 +34,6 @@ import org.waveprotocol.box.server.robots.OperationServiceRegistry;
 import org.waveprotocol.box.server.robots.util.ConversationUtil;
 import org.waveprotocol.box.server.rpc.ProtoSerializer.SerializationException;
 import org.waveprotocol.box.server.waveserver.WaveletProvider;
-import org.waveprotocol.box.webclient.search.SearchService;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.util.logging.Log;
 
@@ -143,7 +142,10 @@ public final class SearchServlet extends AbstractSearchServlet {
     // Otherwise, the total has been reached.
     int totalGuess;
     if (searchResult.getNumResults() >= searchRequest.getNumResults()) {
-      totalGuess = SearchService.UNKNOWN_SIZE;
+      // FIXME Define a common constant.  This used to reference the SearchService interface
+      // from the client.
+      // org.waveprotocol.box.webclient.search.SearchService.UNKNOWN_SIZE
+      totalGuess = -1;
     } else {
       totalGuess = searchRequest.getIndex() + searchResult.getNumResults();
     }

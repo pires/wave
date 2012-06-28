@@ -60,16 +60,6 @@
       <version>${project.version}</version>
     </dependency>
     <dependency>
-      <groupId>org.waveprotocol.box</groupId>
-      <artifactId>client</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.waveprotocol.box</groupId>
-      <artifactId>gwt-util</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.google.guava</groupId>
       <artifactId>guava</artifactId>
       <scope>compile</scope>
