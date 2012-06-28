@@ -30,6 +30,7 @@
 
   <modules>
     <module>proto</module>
+    <module>proto-st-parser</module>
     <module>proto-st</module>
     <module>wave-api</module>
     <module>model</module>

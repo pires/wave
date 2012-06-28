@@ -11,3 +11,6 @@ gen
 target
 .settings
 _*
+
+# Files to edit for usage only #
+build-proto.properties
