@@ -1,18 +1,20 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.wave.media.model;
@@ -20,6 +22,8 @@ package org.waveprotocol.wave.media.model;
 
 import junit.framework.TestCase;
 
+import org.waveprotocol.wave.media.model.Attachment.ImageMetadata;
+import org.waveprotocol.wave.media.model.Attachment.Status;
 import org.waveprotocol.wave.model.document.Doc;
 import org.waveprotocol.wave.model.document.ObservableDocument;
 import org.waveprotocol.wave.model.testing.BasicFactories;
@@ -36,7 +40,7 @@ public class AttachmentDocumentWrapperTest extends TestCase {
   private static final Long SIZE = 123456789123L;
   private static final String MIME_TYPE = "image/jpeg";
   private static final long UPLOAD_PROGRESS = 12345L;
-  private static final String UPLOAD_STATUS = "IN_PROGRESS";
+  private static final Attachment.Status UPLOAD_STATUS = Status.IN_PROGRESS;
 
   private static final int IMAGE_HEIGHT = 123;
   private static final int IMAGE_WIDTH = 234;
@@ -48,10 +52,10 @@ public class AttachmentDocumentWrapperTest extends TestCase {
    * read.
    */
   public void testBasicMetadata() {
-    ClientAttachment wrapper = createBasicWrapper();
+    MutableClientAttachment wrapper = createBasicWrapper();
     checkBasicFields(wrapper);
-    assertNull(wrapper.getImage());
-    assertNull(wrapper.getThumbnail());
+    assertNull(wrapper.getContentImageMetadata());
+    assertNull(wrapper.getThumbnailImageMetadata());
   }
 
   /**
@@ -95,7 +99,7 @@ public class AttachmentDocumentWrapperTest extends TestCase {
    *
    * @param wrapper the wrapper to check
    */
-  private static void checkBasicFields(ClientAttachment wrapper) {
+  private static void checkBasicFields(MutableClientAttachment wrapper) {
     assertEquals(FILENAME, wrapper.getFilename());
     assertEquals(CREATOR, wrapper.getCreator());
     assertEquals(MIME_TYPE, wrapper.getMimeType());
@@ -112,11 +116,11 @@ public class AttachmentDocumentWrapperTest extends TestCase {
    * @param wrapper the wrapper
    */
   private static void checkElementFields(MutableClientAttachment wrapper) {
-    ClientAttachment.Image attachmentImage = wrapper.getImage();
+    ImageMetadata attachmentImage = wrapper.getContentImageMetadata();
     assertEquals(IMAGE_HEIGHT, attachmentImage.getHeight());
     assertEquals(IMAGE_WIDTH, attachmentImage.getWidth());
 
-    ClientAttachment.Thumbnail attachmentThumbnail = wrapper.getThumbnail();
+    ImageMetadata attachmentThumbnail = wrapper.getThumbnailImageMetadata();
     assertEquals(THUMB_HEIGHT, attachmentThumbnail.getHeight());
     assertEquals(THUMB_WIDTH, attachmentThumbnail.getWidth());
   }
