@@ -1,27 +1,33 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
+
 package org.waveprotocol.wave.client.wavepanel.impl.edit;
 
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.user.client.Window;
 
 import org.waveprotocol.wave.client.common.util.WaveRefConstants;
 import org.waveprotocol.wave.client.editor.content.ContentDocument;
 import org.waveprotocol.wave.client.wave.InteractiveDocument;
 import org.waveprotocol.wave.client.wave.WaveDocuments;
+import org.waveprotocol.wave.client.wavepanel.impl.edit.i18n.ActionMessages;
 import org.waveprotocol.wave.client.wavepanel.impl.focus.FocusFramePresenter;
 import org.waveprotocol.wave.client.wavepanel.view.BlipLinkPopupView;
 import org.waveprotocol.wave.client.wavepanel.view.BlipView;
@@ -43,6 +49,8 @@ import org.waveprotocol.wave.util.escapers.GwtWaverefEncoder;
  *
  */
 public final class ActionsImpl implements Actions {
+  private static final ActionMessages messages = GWT.create(ActionMessages.class);
+
   private final ModelAsViewProvider views;
   private final WaveDocuments<? extends InteractiveDocument> documents;
   private final BlipQueueRenderer blipQueue;
@@ -153,8 +161,7 @@ public final class ActionsImpl implements Actions {
     try {
       waveletId = DualIdSerialiser.MODERN.deserialiseWaveletId(blip.getConversation().getId());
     } catch (InvalidIdException e) {
-      Window.alert(
-          "Unable to link to this blip, invalid conversation id " + blip.getConversation().getId());
+      Window.alert(messages.invalidWaveletId(blip.getConversation().getId()));
       return;
     }
     WaveRef waveRef = WaveRef.of(waveId, waveletId, blip.getId());

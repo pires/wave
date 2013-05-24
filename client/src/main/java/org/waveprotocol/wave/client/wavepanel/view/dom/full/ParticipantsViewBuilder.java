@@ -1,18 +1,22 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.wavepanel.view.dom.full;
 
 import static org.waveprotocol.wave.client.uibuilder.OutputHelper.appendSpan;
@@ -21,8 +25,10 @@ import static org.waveprotocol.wave.client.uibuilder.OutputHelper.closeSpan;
 import static org.waveprotocol.wave.client.uibuilder.OutputHelper.open;
 import static org.waveprotocol.wave.client.uibuilder.OutputHelper.openSpan;
 import static org.waveprotocol.wave.client.uibuilder.OutputHelper.openSpanWith;
+import static org.waveprotocol.wave.client.uibuilder.OutputHelper.button;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.gwt.core.client.GWT;
 import com.google.gwt.resources.client.ClientBundle;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.resources.client.ImageResource;
@@ -32,6 +38,7 @@ import org.waveprotocol.wave.client.uibuilder.BuilderHelper.Component;
 import org.waveprotocol.wave.client.uibuilder.HtmlClosureCollection;
 import org.waveprotocol.wave.client.uibuilder.UiBuilder;
 import org.waveprotocol.wave.client.wavepanel.view.View.Type;
+import org.waveprotocol.wave.client.wavepanel.view.dom.full.i18n.ParticipantMessages;
 
 /**
  * UiBuilder for a collection of participants.
@@ -68,7 +75,10 @@ public final class ParticipantsViewBuilder implements UiBuilder {
     String expandButton();
     String collapseButton();
     String addButton();
+    String newWaveWithParticipantsButton();
   }
+
+  private final static ParticipantMessages messages = GWT.create(ParticipantMessages.class);
 
   /** An enum for all the components of a participants view. */
   public enum Components implements Component {
@@ -126,12 +136,15 @@ public final class ParticipantsViewBuilder implements UiBuilder {
               appendSpan(output, null, css.expandButton(), null);
               openSpan(output, null, null, null);
               {
-                output.appendPlainText("more");
+                output.appendPlainText(messages.more());
               }
               closeSpan(output);
             }
             closeSpan(output);
             appendSpan(output, null, css.addButton(), TypeCodes.kind(Type.ADD_PARTICIPANT));
+            button(output, null, css.newWaveWithParticipantsButton(),
+                TypeCodes.kind(Type.NEW_WAVE_WITH_PARTICIPANTS),
+                messages.newWaveWithParticipantsOfCurrentWave(), messages.newWave());
           }
           closeSpan(output);
 
@@ -139,6 +152,9 @@ public final class ParticipantsViewBuilder implements UiBuilder {
           openSpan(output, null, css.simple(), null);
           {
             appendSpan(output, null, css.addButton(), TypeCodes.kind(Type.ADD_PARTICIPANT));
+            button(output, null, css.newWaveWithParticipantsButton(),
+                TypeCodes.kind(Type.NEW_WAVE_WITH_PARTICIPANTS),
+                messages.newWaveWithParticipantsOfCurrentWave(), messages.newWave());
           }
           closeSpan(output);
         }
@@ -161,7 +177,7 @@ public final class ParticipantsViewBuilder implements UiBuilder {
         + "var l=this.lastChild;" //
         + "p.style.height=x?'':'auto';" //
         + "p.setAttribute('s',x?'':'e');" //
-        + "lastChild.innerHTML=x?'more':'less';" //
+        + "lastChild.innerHTML=x?'" + messages.more() + "':'" + messages.less() + "';" //
         + "firstChild.className=x?'" + css.expandButton() + "':'" + css.collapseButton() + "';" //
         + "parentNode.nextSibling.style.display=x?'':'none';" //
     ;

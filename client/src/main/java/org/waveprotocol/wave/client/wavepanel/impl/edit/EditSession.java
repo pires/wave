@@ -1,23 +1,26 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
+
 package org.waveprotocol.wave.client.wavepanel.impl.edit;
 
 import com.google.common.base.Preconditions;
-import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Widget;
 
 import org.waveprotocol.wave.client.common.util.EventWrapper;
@@ -39,11 +42,13 @@ import org.waveprotocol.wave.client.wave.DocumentRegistry;
 import org.waveprotocol.wave.client.wave.InteractiveDocument;
 import org.waveprotocol.wave.client.wavepanel.WavePanel;
 import org.waveprotocol.wave.client.wavepanel.impl.WavePanelImpl;
+import org.waveprotocol.wave.client.wavepanel.impl.focus.BlipEditStatusListener;
 import org.waveprotocol.wave.client.wavepanel.impl.focus.FocusFramePresenter;
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.LinkerHelper;
 import org.waveprotocol.wave.client.wavepanel.view.BlipView;
 import org.waveprotocol.wave.client.wavepanel.view.IntrinsicBlipMetaView.MenuOption;
 import org.waveprotocol.wave.client.wavepanel.view.dom.ModelAsViewProvider;
+import org.waveprotocol.wave.client.wavepanel.view.dom.full.BlipMetaViewBuilder;
 import org.waveprotocol.wave.model.util.CopyOnWriteSet;
 
 /**
@@ -85,19 +90,22 @@ public final class EditSession
   private BlipView editing;
   /** Editor control. */
   private Editor editor;
+  /** Control the focus style on the editing blip **/
+  private final BlipEditStatusListener blipEditStatusListener;
 
   EditSession(ModelAsViewProvider views, DocumentRegistry<? extends InteractiveDocument> documents,
-      LogicalPanel container, SelectionExtractor selectionExtractor) {
+      LogicalPanel container, SelectionExtractor selectionExtractor, BlipEditStatusListener blipEditStatusListener) {
     this.views = views;
     this.documents = documents;
     this.container = container;
     this.selectionExtractor = selectionExtractor;
+    this.blipEditStatusListener = blipEditStatusListener;
   }
 
   public static EditSession install(ModelAsViewProvider views,
       DocumentRegistry<? extends InteractiveDocument> documents,
       SelectionExtractor selectionExtractor, FocusFramePresenter focus, WavePanelImpl panel) {
-    EditSession edit = new EditSession(views, documents, panel.getGwtPanel(), selectionExtractor);
+    EditSession edit = new EditSession(views, documents, panel.getGwtPanel(), selectionExtractor, focus);
     focus.addListener(edit);
     if (panel.hasContents()) {
       edit.onInit();
@@ -150,7 +158,9 @@ public final class EditSession
 
     // Find the document.
     ContentDocument document = documents.get(views.getBlip(blipUi)).getDocument();
-    blipUi.getMeta().select(MenuOption.EDIT);
+    blipUi.getMeta().enable(BlipMetaViewBuilder.ENABLED_WHILE_EDITING_MENU_OPTIONS_SET);
+    blipUi.getMeta().disable(BlipMetaViewBuilder.DISABLED_WHILE_EDITING_MENU_OPTIONS_SET);
+    blipUi.getMeta().select(MenuOption.EDIT_DONE);
 
     // Create or re-use and editor for it.
     editor = Editors.attachTo(document);
@@ -170,6 +180,7 @@ public final class EditSession
       }
     });
     editor.setEditing(true);
+    blipEditStatusListener.setEditing(true);
     editor.focus(false);
     editing = blipUi;
     selectionExtractor.start(editor);
@@ -185,12 +196,15 @@ public final class EditSession
       container.doOrphan(editor.getWidget());
       editor.blur();
       editor.setEditing(false);
+      blipEditStatusListener.setEditing(false);
       // "removeContent" just means detach the editor from the document.
       editor.removeContent();
       editor.reset();
       // TODO(user): this does not work if the view has been deleted and
       // detached.
-      editing.getMeta().deselect(MenuOption.EDIT);
+      editing.getMeta().deselect(MenuOption.EDIT_DONE);
+      editing.getMeta().enable(BlipMetaViewBuilder.DISABLED_WHILE_EDITING_MENU_OPTIONS_SET);
+      editing.getMeta().disable(BlipMetaViewBuilder.ENABLED_WHILE_EDITING_MENU_OPTIONS_SET);
       Editor oldEditor = editor;
       BlipView oldEditing = editing;
       editor = null;
@@ -220,11 +234,7 @@ public final class EditSession
 
   @Override
   public void onFocusMoved(BlipView oldUi, BlipView newUi) {
-    boolean wasEditing = isEditing();
     endSession();
-    if (wasEditing && newUi != null) {
-      startEditing(newUi);
-    }
   }
 
   @Override

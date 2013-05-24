@@ -1,19 +1,22 @@
 /**
- * Copyright 2011 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget;
 
 import com.google.gwt.core.client.GWT;
@@ -38,6 +41,8 @@ import com.google.gwt.user.client.ui.TextBox;
 
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.GadgetInfoProvider.GadgetCategoryType;
 import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.GadgetInfoProvider.GadgetInfo;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.i18n.GadgetCategoryMessages;
+import org.waveprotocol.wave.client.wavepanel.impl.toolbar.gadget.i18n.GadgetSelectorMessages;
 import org.waveprotocol.wave.client.widget.common.ImplPanel;
 import org.waveprotocol.wave.client.widget.popup.CenterPopupPositioner;
 import org.waveprotocol.wave.client.widget.popup.PopupChrome;
@@ -64,6 +69,9 @@ public class GadgetSelectorWidget extends Composite implements
   }
 
   private static final Binder BINDER = GWT.create(Binder.class);
+
+  private static final GadgetCategoryMessages categoryMessages = GWT.create(GadgetCategoryMessages.class);
+  private static final GadgetSelectorMessages messages = GWT.create(GadgetSelectorMessages.class);
 
   @UiField ImplPanel self;
   @UiField DockLayoutPanel dockPanel;
@@ -98,7 +106,7 @@ public class GadgetSelectorWidget extends Composite implements
         null, new CenterPopupPositioner(), chrome, true);
 
     TitleBar titleBar = popup.getTitleBar();
-    titleBar.setTitleText("Select Gadget");
+    titleBar.setTitleText(messages.selectGadget());
     popup.add(GadgetSelectorWidget.this);
 
     popup.show();
@@ -171,7 +179,28 @@ public class GadgetSelectorWidget extends Composite implements
 
     // Add the categories to the category drop box.
     for (GadgetCategoryType category : GadgetCategoryType.values()) {
-      categoryDropBox.addItem(category.getType());
+      categoryDropBox.addItem(getCategoryName(category), category.getType());
+    }
+  }
+
+  private String getCategoryName(GadgetCategoryType category) {
+    switch (category) {
+      case ALL: return categoryMessages.all();
+      case GAME: return categoryMessages.game();
+      case IMAGE: return categoryMessages.image();
+      case MAP: return categoryMessages.map();
+      case MUSIC: return categoryMessages.music();
+      case OTHER: return categoryMessages.other();
+      case PRODUCTIVITY: return categoryMessages.productivity();
+      case SEARCH: return categoryMessages.search();
+      case TEAM: return categoryMessages.team();
+      case TIME: return categoryMessages.time();
+      case TRAVEL: return categoryMessages.travel();
+      case UTILITY: return categoryMessages.utility();
+      case VIDEO: return categoryMessages.video();
+      case VOICE: return categoryMessages.voice();
+      case VOTING: return categoryMessages.voting();
+      default: return category.getType();
     }
   }
 

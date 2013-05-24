@@ -1,19 +1,22 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.wavepanel.impl.focus;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -33,7 +36,7 @@ import org.waveprotocol.wave.model.wave.SourcesEvents;
  *
  */
 public final class FocusFramePresenter
-    implements SourcesEvents<FocusFramePresenter.Listener>, WavePanelImpl.LifecycleListener {
+    implements BlipEditStatusListener, SourcesEvents<FocusFramePresenter.Listener>, WavePanelImpl.LifecycleListener {
 
   public interface Listener {
     void onFocusMoved(BlipView oldUi, BlipView newUi);
@@ -237,5 +240,14 @@ public final class FocusFramePresenter
   /** @return the view that is currently focused. */
   public BlipView getFocusedBlip() {
     return blip;
+  }
+
+  /**
+   * Sets the blip style depending on if is editing or not.
+   *
+   * @param editing the new editing
+   */
+  public void setEditing(boolean editing) {
+    view.setEditing(editing);
   }
 }

@@ -1,19 +1,22 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.gadget.renderer;
 
 import static org.waveprotocol.wave.model.gadget.GadgetConstants.AUTHOR_ATTRIBUTE;
@@ -82,7 +85,7 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
 
   private static final String GADGET_RELAY_PATH = "gadgets/files/container/rpc_relay.html";
   private static final int DEFAULT_HEIGHT_PX = 100;
-  private static final int DEFAULT_WIDTH_PX = 600;
+  private static final String DEFAULT_WIDTH = "99%";
 
   /**
    * Helper class to analyze element changes in the gadget state and prefs.
@@ -301,6 +304,7 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
   private boolean toUpdateIframeUrl = false;
 
   private final String clientInstanceLogLabel;
+  private boolean isSavedHeightSet = false;
 
   // Note that the following regex expressions are strings rather than compiled patterns because GWT
   // does not (yet) support those. Consider using the new GWT RegExp class in the future.
@@ -608,6 +612,23 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
   }
 
   /**
+   * Update the gadget iframe height in a deferred command if the panel is
+   * editable
+   *
+   * @param height the new height of the gadget iframe
+   */
+  private void scheduleGadgetHeightUpdate(final String height) {
+    ScheduleCommand.addCommand(new Scheduler.Task() {
+      @Override
+      public void execute() {
+        if (canModifyDocument()) {
+          updateIframeHeight(height);
+        }
+      }
+    });
+  }
+
+  /**
    * Updates gadget IFrame attributes.
    *
    * @param url URL template for the iframe.
@@ -652,6 +673,7 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
       try {
         int height = parseSizeString(savedHeight);
         ui.setIframeHeight(height);
+        isSavedHeightSet = true;
       } catch (NumberFormatException e) {
         log("Invalid saved height attribute (ignored): ", savedHeight);
       }
@@ -932,14 +954,14 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
         (int) (metadata.hasWidth() ? metadata.getWidth() : metadata.getPreferredWidth(view));
     registerWithController(url, width, height);
     if (height > 0) {
-      setIframeHeight(String.valueOf(height));
+      updateIframeHeight(String.valueOf(height));
     } else {
-      setIframeHeight(String.valueOf(DEFAULT_HEIGHT_PX));
+      updateIframeHeight(String.valueOf(DEFAULT_HEIGHT_PX));
     }
     if (width > 0){
       setIframeWidth(String.valueOf(width));
     } else {
-      setIframeWidth(String.valueOf(DEFAULT_WIDTH_PX));
+      setIframeWidth(DEFAULT_WIDTH);
     }
   }
 
@@ -1320,9 +1342,8 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
     active = false;
   }
 
-  @Override
-  public void setIframeHeight(String height) {
-    if (!isActive()) {
+  private void updateIframeHeight(String height) {
+    if (!isActive() || (isSavedHeightSet && !documentModified)) {
       return;
     }
     log("Set IFrame height ", height);
@@ -1335,18 +1356,31 @@ public class GadgetWidget extends ObservableSupplementedWave.ListenerImpl
     }
   }
 
+  @Override
+  public void setIframeHeight(String height) {
+    scheduleGadgetHeightUpdate(height);
+  }
+
   public void setIframeWidth(String width) {
     if (!isActive()) {
       return;
     }
     log("Set IFrame width ", width);
-    try {
-      int widthValue = parseSizeString(width);
-      ui.setIframeWidth(widthValue + "px");
+    if (width.contains("%")) {
+      ui.setIframeWidth(width);
       ui.makeInline();
-      scheduleGadgetAttributeUpdate(LAST_KNOWN_WIDTH_ATTRIBUTE, Long.toString(widthValue));
-    } catch (NumberFormatException e) {
-      log("Invalid width (ignored): ", width);
+      scheduleGadgetAttributeUpdate(LAST_KNOWN_WIDTH_ATTRIBUTE, width);
+    } else {
+      try {
+        int widthValue = parseSizeString(width);
+        if (widthValue > 0) {
+          ui.setIframeWidth(widthValue + "px");
+        }
+        ui.makeInline();
+        scheduleGadgetAttributeUpdate(LAST_KNOWN_WIDTH_ATTRIBUTE, Long.toString(widthValue));
+      } catch (NumberFormatException e) {
+        log("Invalid width (ignored): ", width);
+      }
     }
   }
 

@@ -1,18 +1,22 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.wavepanel.view.dom.full;
 
 import com.google.gwt.core.client.GWT;
@@ -20,6 +24,8 @@ import com.google.gwt.dom.client.StyleInjector;
 
 import org.waveprotocol.wave.client.editor.EditorImpl;
 import org.waveprotocol.wave.client.wavepanel.view.dom.CssProvider;
+import org.waveprotocol.wave.client.wavepanel.view.dom.full.i18n.BlipMessages;
+import org.waveprotocol.wave.client.wavepanel.view.dom.full.i18n.ReplyBoxMessages;
 
 /**
  * This class is responsible for loading all the Css resources needed by the
@@ -42,6 +48,12 @@ public final class WavePanelResourceLoader {
       GWT.create(TopConversationViewBuilder.Resources.class);
   private final static ParticipantsViewBuilder.Resources participants =
       GWT.create(ParticipantsViewBuilder.Resources.class);
+
+  private final static BlipMessages blipMessages =
+      GWT.create(BlipMessages.class);
+
+  private final static ReplyBoxMessages replyBoxMessages =
+      GWT.create(ReplyBoxMessages.class);
 
   static {
     // Inject all CSS synchronously. CSS must be injected synchronously, so that
@@ -89,6 +101,14 @@ public final class WavePanelResourceLoader {
 
   public static ParticipantsViewBuilder.Resources getParticipants() {
     return participants;
+  }
+
+  public static BlipMessages getBlipMessages() {
+    return blipMessages;
+  }
+
+  public static ReplyBoxMessages getReplyBoxMessages() {
+    return replyBoxMessages;
   }
 
   /**

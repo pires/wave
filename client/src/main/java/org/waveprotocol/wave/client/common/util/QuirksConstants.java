@@ -1,18 +1,20 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.wave.client.common.util;
@@ -370,7 +372,7 @@ public final class QuirksConstants {
    */
   public static final boolean PLAINTEXT_PASTE_DOES_NOT_EMIT_PASTE_EVENT =
     UserAgent.isSafari();
-  
+
   /**
    * True if the browser supports input type 'search'.
    *
@@ -390,6 +392,15 @@ public final class QuirksConstants {
   public static final boolean SANITIZES_PASTED_CONTENT =
       (UserAgent.isWebkit() && UserAgent.isAtLeastVersion(533, 16)) ||
       (UserAgent.isFirefox() && UserAgent.isAtLeastVersion(4, 0));
+
+  /**
+   * True if the browser is firefox >= 15
+   *
+   * Tested:
+   * FF 13, FF 14, FF 15
+   */
+  public static final boolean FIREFOX_GREATER_THAN_VER_15 =
+      (UserAgent.isFirefox() && UserAgent.isAtLeastVersion(15, 0));
 
   private static native boolean checkGetElementsByClassNameSupport() /*-{
     return !!document.body.getElementsByClassName;

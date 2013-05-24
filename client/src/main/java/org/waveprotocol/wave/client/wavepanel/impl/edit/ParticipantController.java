@@ -1,19 +1,23 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
+
 package org.waveprotocol.wave.client.wavepanel.impl.edit;
 
 import javax.annotation.Nullable;
@@ -23,6 +27,8 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 
+import org.waveprotocol.box.webclient.client.ClientEvents;
+import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
 import org.waveprotocol.wave.client.account.Profile;
 import org.waveprotocol.wave.client.account.ProfileManager;
 import org.waveprotocol.wave.client.common.safehtml.EscapeUtils;
@@ -35,6 +41,8 @@ import org.waveprotocol.wave.client.wavepanel.view.View.Type;
 import org.waveprotocol.wave.client.wavepanel.view.dom.DomAsViewProvider;
 import org.waveprotocol.wave.client.wavepanel.view.dom.ModelAsViewProvider;
 import org.waveprotocol.wave.client.wavepanel.view.dom.full.TypeCodes;
+import org.waveprotocol.wave.client.wavepanel.impl.edit.i18n.ParticipantMessages;
+import org.waveprotocol.wave.client.widget.popup.UniversalPopup;
 import org.waveprotocol.wave.client.widget.profile.ProfilePopupPresenter;
 import org.waveprotocol.wave.client.widget.profile.ProfilePopupView;
 import org.waveprotocol.wave.model.conversation.Conversation;
@@ -42,6 +50,8 @@ import org.waveprotocol.wave.model.util.Pair;
 import org.waveprotocol.wave.model.util.Preconditions;
 import org.waveprotocol.wave.model.wave.InvalidParticipantAddress;
 import org.waveprotocol.wave.model.wave.ParticipantId;
+
+import java.util.Set;
 
 /**
  * Installs the add/remove participant controls.
@@ -52,26 +62,34 @@ public final class ParticipantController {
   private final ModelAsViewProvider models;
   private final ProfileManager profiles;
   private final String localDomain;
+  private final ParticipantId user;
+  private final ParticipantMessages messages;
+  private UniversalPopup popup = null;
 
   /**
    * @param localDomain nullable. if provided, automatic suffixing will occur.
+   * @param user the logged in user
    */
   ParticipantController(
       DomAsViewProvider views, ModelAsViewProvider models, ProfileManager profiles,
-      String localDomain) {
+      String localDomain, ParticipantId user, ParticipantMessages messages) {
     this.views = views;
     this.models = models;
     this.profiles = profiles;
     this.localDomain = localDomain;
+    this.user = user;
+    this.messages = messages;
   }
 
   /**
    * Builds and installs the participant control feature.
+   * @param user the logged in user
    */
   public static void install(WavePanel panel, ModelAsViewProvider models, ProfileManager profiles,
-      String localDomain) {
+      String localDomain, ParticipantId user, ParticipantMessages messages) {
     ParticipantController controller =
-        new ParticipantController(panel.getViewProvider(), models, profiles, localDomain);
+        new ParticipantController(panel.getViewProvider(), models, profiles,
+          localDomain, user, messages);
     controller.install(panel.getHandlers());
   }
 
@@ -83,6 +101,14 @@ public final class ParticipantController {
         return true;
       }
     });
+    handlers.registerClickHandler(TypeCodes.kind(Type.NEW_WAVE_WITH_PARTICIPANTS),
+      new WaveClickHandler() {
+        @Override
+        public boolean onClick(ClickEvent event, Element context) {
+          handleNewWaveWithParticipantsButtonClicked(context);
+          return true;
+        }
+      });
     handlers.registerClickHandler(TypeCodes.kind(Type.PARTICIPANT), new WaveClickHandler() {
       @Override
       public boolean onClick(ClickEvent event, Element context) {
@@ -130,6 +156,34 @@ public final class ParticipantController {
   }
 
   /**
+   * Creates a new wave with the participants of the current wave. Showing
+   * a popup dialog where the user can chose to deselect users that should not
+   * be participants in the new wave
+   */
+  private void handleNewWaveWithParticipantsButtonClicked(Element context) {
+    ParticipantsView participantsUi = views.fromNewWaveWithParticipantsButton(context);
+    ParticipantSelectorWidget selector = new ParticipantSelectorWidget();
+    popup = null;
+    selector.setListener(new ParticipantSelectorWidget.Listener() {
+      @Override
+      public void onSelect(Set<ParticipantId> participants) {
+        if (popup != null) {
+          popup.hide();
+        }
+        ClientEvents.get().fireEvent(
+            new WaveCreationEvent(participants));
+      }
+
+      @Override
+      public void onCancel() {
+        popup.hide();
+      }
+    });
+    popup = selector.showInPopup(user,
+        models.getParticipants(participantsUi).getParticipantIds(), profiles);
+  }
+
+  /**
    * Shows an add-participant popup.
    */
   private void handleAddButtonClicked(Element context) {
@@ -166,7 +220,7 @@ public final class ParticipantController {
     // it.
     final ProfilePopupView profileView = participantView.showParticipation();
     ProfilePopupPresenter profileUi = ProfilePopupPresenter.create(profile, profileView, profiles);
-    profileUi.addControl(EscapeUtils.fromSafeConstant("Remove"), new ClickHandler() {
+    profileUi.addControl(EscapeUtils.fromSafeConstant(messages.remove()), new ClickHandler() {
       @Override
       public void onClick(ClickEvent event) {
         participation.first.removeParticipant(participation.second);

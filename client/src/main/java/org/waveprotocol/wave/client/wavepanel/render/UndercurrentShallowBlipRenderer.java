@@ -1,19 +1,22 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.wave.client.wavepanel.render;
 
 import org.waveprotocol.wave.client.account.ProfileManager;
@@ -26,6 +29,7 @@ import org.waveprotocol.wave.model.supplement.ReadableSupplementedWave;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 
 import java.util.Set;
+import java.util.Date;
 
 /**
  * Defines the shallow blip rendering for the Undercurrent UI.
@@ -40,6 +44,9 @@ public final class UndercurrentShallowBlipRenderer implements ShallowBlipRendere
   /** Provides read state of blips. */
   private final ReadableSupplementedWave supplement;
 
+  /** Provides direct access to a DateUtils instance */
+  private final DateUtils dateUtils;
+
   /**
    * Defines the rendering function for the contents of a blip.
    */
@@ -48,9 +55,10 @@ public final class UndercurrentShallowBlipRenderer implements ShallowBlipRendere
   }
 
   public UndercurrentShallowBlipRenderer(
-      ProfileManager manager, ReadableSupplementedWave supplement) {
+      ProfileManager manager, ReadableSupplementedWave supplement, DateUtils dateUtils) {
     this.manager = manager;
     this.supplement = supplement;
+    this.dateUtils = dateUtils;
   }
 
   @Override
@@ -75,7 +83,14 @@ public final class UndercurrentShallowBlipRenderer implements ShallowBlipRendere
 
   @Override
   public void renderTime(ConversationBlip blip, IntrinsicBlipMetaView meta) {
-    meta.setTime(DateUtils.getInstance().formatPastDate(blip.getLastModifiedTime()));
+    if (blip.getLastModifiedTime() == 0) {
+      //Blip sent using c/s protocol, which has no timestamp attached (WAVE-181)
+      //Using received time as an estimate of the sent time
+      meta.setTime(dateUtils.formatPastDate(new Date().getTime()));
+    }
+    else {
+      meta.setTime(dateUtils.formatPastDate(blip.getLastModifiedTime()));
+    }
   }
 
   @Override

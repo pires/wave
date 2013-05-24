@@ -1,18 +1,23 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
+
 package org.waveprotocol.wave.client;
 
 import com.google.common.base.Preconditions;
@@ -24,6 +29,7 @@ import org.waveprotocol.wave.client.account.impl.ProfileManagerImpl;
 import org.waveprotocol.wave.client.common.util.AsyncHolder;
 import org.waveprotocol.wave.client.common.util.ClientPercentEncoderDecoder;
 import org.waveprotocol.wave.client.common.util.CountdownLatch;
+import org.waveprotocol.wave.client.common.util.DateUtils;
 import org.waveprotocol.wave.client.concurrencycontrol.LiveChannelBinder;
 import org.waveprotocol.wave.client.concurrencycontrol.MuxConnector;
 import org.waveprotocol.wave.client.concurrencycontrol.WaveletOperationalizer;
@@ -78,6 +84,9 @@ import org.waveprotocol.wave.client.wavepanel.view.dom.full.DomRenderer;
 import org.waveprotocol.wave.client.wavepanel.view.dom.full.ViewFactories;
 import org.waveprotocol.wave.client.wavepanel.view.dom.full.ViewFactory;
 import org.waveprotocol.wave.client.wavepanel.view.dom.full.WavePanelResourceLoader;
+import org.waveprotocol.wave.client.doodad.attachment.AttachmentManagerImpl;
+import org.waveprotocol.wave.client.doodad.attachment.ImageThumbnail;
+import org.waveprotocol.wave.client.doodad.attachment.render.ImageThumbnailWrapper;
 import org.waveprotocol.wave.common.logging.LoggerBundle;
 import org.waveprotocol.wave.concurrencycontrol.channel.OperationChannelMultiplexer;
 import org.waveprotocol.wave.concurrencycontrol.channel.OperationChannelMultiplexerImpl;
@@ -585,7 +594,7 @@ public interface StageTwo {
 
     /** @return the renderer of intrinsic blip state. Subclasses may override. */
     protected ShallowBlipRenderer createBlipDetailer() {
-      return new UndercurrentShallowBlipRenderer(getProfileManager(), getSupplement());
+      return new UndercurrentShallowBlipRenderer(getProfileManager(), getSupplement(), DateUtils.getInstance());
     }
 
     /** @return the thread state monitor. Subclasses may override. */
@@ -678,6 +687,14 @@ public interface StageTwo {
           TitleAnnotationHandler.register(r);
           LinkAnnotationHandler.register(r, createLinkAttributeAugmenter());
           SelectionAnnotationHandler.register(r, getSessionId(), getProfileManager());
+          ImageThumbnail.register(r.getElementHandlerRegistry(), AttachmentManagerImpl.getInstance(),
+              new ImageThumbnail.ThumbnailActionHandler() {
+
+                @Override
+                public boolean onClick(ImageThumbnailWrapper thumbnail) {
+                  return false;
+                }
+              });
         }
       });
     }

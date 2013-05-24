@@ -1,17 +1,20 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 package org.waveprotocol.wave.client.wavepanel.view.dom.full;
 
@@ -32,6 +35,7 @@ import org.waveprotocol.wave.client.uibuilder.BuilderHelper.Component;
 import org.waveprotocol.wave.client.uibuilder.UiBuilder;
 import org.waveprotocol.wave.client.wavepanel.view.IntrinsicBlipMetaView;
 import org.waveprotocol.wave.client.wavepanel.view.View.Type;
+import org.waveprotocol.wave.client.wavepanel.view.dom.full.i18n.BlipMessages;
 import org.waveprotocol.wave.model.util.CollectionUtils;
 import org.waveprotocol.wave.model.util.StringMap;
 
@@ -45,6 +49,7 @@ import java.util.Set;
 /**
  */
 public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaView {
+
 
   /** An enum for all the components of a blip view. */
   public enum Components implements Component {
@@ -85,23 +90,13 @@ public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaVi
 
   public static final String OPTION_ID_ATTRIBUTE = "o";
   public static final String OPTION_SELECTED_ATTRIBUTE = "s";
-
-  static {
-    MENU_CODES.put(MenuOption.EDIT, EscapeUtils.fromSafeConstant("e"));
-    MENU_CODES.put(MenuOption.REPLY, EscapeUtils.fromSafeConstant("r"));
-    MENU_CODES.put(MenuOption.DELETE, EscapeUtils.fromSafeConstant("d"));
-    MENU_CODES.put(MenuOption.LINK, EscapeUtils.fromSafeConstant("l"));
-    MENU_LABELS.put(MenuOption.EDIT, EscapeUtils.fromSafeConstant("Edit"));
-    MENU_LABELS.put(MenuOption.REPLY, EscapeUtils.fromSafeConstant("Reply"));
-    MENU_LABELS.put(MenuOption.DELETE, EscapeUtils.fromSafeConstant("Delete"));
-    MENU_LABELS.put(MenuOption.LINK, EscapeUtils.fromSafeConstant("Link"));
-    for (MenuOption option : MENU_CODES.keySet()) {
-      MENU_OPTIONS.put(MENU_CODES.get(option).asString(), option);
-    }
-    assert MENU_CODES.keySet().equals(MENU_LABELS.keySet());
-    assert MENU_OPTIONS.countEntries() == MENU_CODES.size();
-    assert new HashSet<MenuOption>(Arrays.asList(MenuOption.values())).equals(MENU_LABELS.keySet());
-  }
+  private static final EnumSet<MenuOption> MENU_OPTIONS_BEFORE_EDITING = EnumSet.of(
+      IntrinsicBlipMetaView.MenuOption.REPLY, IntrinsicBlipMetaView.MenuOption.DELETE,
+      IntrinsicBlipMetaView.MenuOption.EDIT,
+      IntrinsicBlipMetaView.MenuOption.LINK);
+  public final static Set<MenuOption> ENABLED_WHILE_EDITING_MENU_OPTIONS_SET = EnumSet.of(
+      IntrinsicBlipMetaView.MenuOption.EDIT_DONE);
+  public final static Set<MenuOption> DISABLED_WHILE_EDITING_MENU_OPTIONS_SET = MENU_OPTIONS_BEFORE_EDITING;
 
   /**
    * A unique id for this builder.
@@ -117,7 +112,7 @@ public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaVi
   private String metaline;
   private String avatarUrl;
   private boolean read = true;
-  private final Set<MenuOption> options = EnumSet.allOf(MenuOption.class);
+  private final Set<MenuOption> options = MENU_OPTIONS_BEFORE_EDITING;
   private final Set<MenuOption> selected = EnumSet.noneOf(MenuOption.class);
 
   //
@@ -133,17 +128,19 @@ public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaVi
    *        characters
    */
   public static BlipMetaViewBuilder create(String id, UiBuilder content) {
-    return new BlipMetaViewBuilder(WavePanelResourceLoader.getBlip().css(), id, nonNull(content));
+    return new BlipMetaViewBuilder(WavePanelResourceLoader.getBlip().css(),
+        WavePanelResourceLoader.getBlipMessages(), id, nonNull(content));
   }
 
   @VisibleForTesting
-  BlipMetaViewBuilder(BlipViewBuilder.Css css, String id, UiBuilder content) {
+  BlipMetaViewBuilder(BlipViewBuilder.Css css, BlipMessages messages, String id, UiBuilder content) {
     // must not contain ', it is especially troublesome because it cause
     // security issues.
     Preconditions.checkArgument(!id.contains("\'"));
     this.css = css;
     this.id = id;
     this.content = content;
+    buildMenuModel(messages);
   }
 
   @Override
@@ -177,10 +174,12 @@ public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaVi
     this.selected.removeAll(options);
   }
 
+  @Override
   public void select(MenuOption option) {
     this.selected.add(option);
   }
 
+  @Override
   public void deselect(MenuOption option) {
     this.selected.remove(option);
   }
@@ -269,5 +268,24 @@ public final class BlipMetaViewBuilder implements UiBuilder, IntrinsicBlipMetaVi
       throw new IllegalArgumentException("No such option: " + option);
     }
     return code;
+  }
+
+  private static void buildMenuModel(BlipMessages messages) {
+    MENU_CODES.put(MenuOption.EDIT, EscapeUtils.fromSafeConstant("e"));
+    MENU_CODES.put(MenuOption.EDIT_DONE, EscapeUtils.fromSafeConstant("x"));
+    MENU_CODES.put(MenuOption.REPLY, EscapeUtils.fromSafeConstant("r"));
+    MENU_CODES.put(MenuOption.DELETE, EscapeUtils.fromSafeConstant("d"));
+    MENU_CODES.put(MenuOption.LINK, EscapeUtils.fromSafeConstant("l"));
+    MENU_LABELS.put(MenuOption.EDIT, EscapeUtils.fromSafeConstant(messages.edit()));
+    MENU_LABELS.put(MenuOption.EDIT_DONE, EscapeUtils.fromSafeConstant(messages.done()));
+    MENU_LABELS.put(MenuOption.REPLY, EscapeUtils.fromSafeConstant(messages.reply()));
+    MENU_LABELS.put(MenuOption.DELETE, EscapeUtils.fromSafeConstant(messages.delete()));
+    MENU_LABELS.put(MenuOption.LINK, EscapeUtils.fromSafeConstant(messages.link()));
+    for (MenuOption option : MENU_CODES.keySet()) {
+      MENU_OPTIONS.put(MENU_CODES.get(option).asString(), option);
+    }
+    assert MENU_CODES.keySet().equals(MENU_LABELS.keySet());
+    assert MENU_OPTIONS.countEntries() == MENU_CODES.size();
+    assert new HashSet<MenuOption>(Arrays.asList(MenuOption.values())).equals(MENU_LABELS.keySet());
   }
 }
