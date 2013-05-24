@@ -1,18 +1,20 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.webclient.client;
@@ -49,6 +51,7 @@ import java.util.Queue;
  * Wrapper around SocketIO that handles the FedOne client-server protocol.
  */
 public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
+  private static final int MAX_INITIAL_FAILURES = 2;
   private static final Log LOG = Log.get(WaveWebSocketClient.class);
   private static final int RECONNECT_TIME_MS = 5000;
   private static final String JETTY_SESSION_TOKEN_NAME = "JSESSIONID";
@@ -88,7 +91,7 @@ public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
     }
   }
 
-  private final WaveSocket socket;
+  private WaveSocket socket;
   private final IntMap<SubmitResponseCallback> submitRequestCallbacks;
 
   /**
@@ -108,6 +111,12 @@ public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
   private final RepeatingCommand reconnectCommand = new RepeatingCommand() {
     @Override
     public boolean execute() {
+      if (!connectedAtLeastOnce && !websocketNotAvailable && connectTry > MAX_INITIAL_FAILURES) {
+        // Let's try to use socketio, seems that websocket it's not working
+        // (we are under a proxy or similar)
+        socket = WaveSocketFactory.create(true, urlBase, WaveWebSocketClient.this);
+      }
+      connectTry++;
       if (connected == ConnectState.DISCONNECTED) {
         LOG.info("Attemping to reconnect");
         connected = ConnectState.CONNECTING;
@@ -116,10 +125,16 @@ public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
       return true;
     }
   };
+  private final boolean websocketNotAvailable;
+  private boolean connectedAtLeastOnce = false;
+  private long connectTry = 0;
+  private final String urlBase;
 
-  public WaveWebSocketClient(boolean useSocketIO, String urlBase) {
+  public WaveWebSocketClient(boolean websocketNotAvailable, String urlBase) {
+    this.websocketNotAvailable = websocketNotAvailable;
+    this.urlBase = urlBase;
     submitRequestCallbacks = CollectionUtils.createIntMap();
-    socket = WaveSocketFactory.create(useSocketIO, urlBase, this);
+    socket = WaveSocketFactory.create(websocketNotAvailable, urlBase, this);
   }
 
   /**
@@ -144,6 +159,7 @@ public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
   @Override
   public void onConnect() {
     connected = ConnectState.CONNECTED;
+    connectedAtLeastOnce = true;
 
     // Sends the session cookie to the server via an RPC to work around browser bugs.
     // See: http://code.google.com/p/wave-protocol/issues/detail?id=119
@@ -214,4 +230,5 @@ public class WaveWebSocketClient implements WaveSocket.WaveSocketCallback {
         messages.add(message);
     }
   }
+
 }

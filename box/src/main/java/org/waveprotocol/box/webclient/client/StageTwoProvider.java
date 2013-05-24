@@ -1,20 +1,21 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
-
 
 package org.waveprotocol.box.webclient.client;
 
@@ -34,6 +35,8 @@ import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.model.wave.data.WaveViewData;
 import org.waveprotocol.wave.model.wave.data.impl.WaveViewDataImpl;
 import org.waveprotocol.wave.model.waveref.WaveRef;
+
+import java.util.Set;
 
 /**
  * Provides stage 2 of the staged loading of the wave panel
@@ -56,16 +59,20 @@ public class StageTwoProvider extends StageTwo.DefaultProvider {
    * new protocol.
    */
   private AsyncHolder.Accessor<StageTwo> whenReady;
+  private final Set<ParticipantId> otherParticipants;
 
   /**
    * @param waveId the id of the wave to open, or null to create a new wave
    * @param channel communication channel
    * @param idGenerator
+   * @param otherParticipants the participants to add to the newly created wave,
+   *        in addition to the creator. {@code null} if only the creator
+   *        should be added.
    * @param unsavedIndicatorElement
    */
   public StageTwoProvider(StageOne stageOne, WaveRef waveRef, RemoteViewServiceMultiplexer channel,
       boolean isNewWave, IdGenerator idGenerator, ProfileManager profiles,
-      UnsavedDataListener unsavedDataListener) {
+      UnsavedDataListener unsavedDataListener, Set<ParticipantId> otherParticipants) {
     super(stageOne, unsavedDataListener);
     Preconditions.checkArgument(stageOne != null);
     Preconditions.checkArgument(waveRef != null);
@@ -75,6 +82,7 @@ public class StageTwoProvider extends StageTwo.DefaultProvider {
     this.isNewWave = isNewWave;
     this.idGenerator = idGenerator;
     this.profiles = profiles;
+    this.otherParticipants = otherParticipants;
   }
 
   @Override
@@ -110,6 +118,9 @@ public class StageTwoProvider extends StageTwo.DefaultProvider {
     if (isNewWave) {
       // For a new wave, initial state comes from local initialization.
       getConversations().createRoot().getRootThread().appendBlip();
+
+      // Adding any initial participant to the new wave
+      getConversations().getRoot().addParticipantIds(otherParticipants);
       super.install();
       whenReady.use(StageTwoProvider.this);
     } else {

@@ -1,18 +1,22 @@
 /**
- * Copyright 2011 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.box.webclient.search;
 
 import com.google.common.base.Preconditions;
@@ -157,6 +161,16 @@ public class SearchPanelWidget extends Composite implements SearchPanelView {
   }
 
   @Override
+  public DigestDomImpl getFirst() {
+    return digests.getFirst();
+  }
+
+  @Override
+  public DigestDomImpl getLast() {
+    return digests.getLast();
+  }
+
+  @Override
   public DigestDomImpl getNext(DigestView ref) {
     return digests.getNext(narrow(ref));
   }
@@ -177,6 +191,24 @@ public class SearchPanelWidget extends Composite implements SearchPanelView {
     digests.insertBefore(refDomImpl, digestUi);
     list.insertBefore(digestUi.getElement(), refElement);
 
+    return digestUi;
+  }
+
+  @Override
+  public DigestDomImpl insertAfter(DigestView ref, Digest digest) {
+    DigestDomImpl digestUi = digestPool.get();
+    renderer.render(digest, digestUi);
+
+    DigestDomImpl refDomImpl = narrow(ref);
+    Element refElement = refDomImpl != null ? refDomImpl.getElement() : showMore;
+    byId.put(digestUi.getId(), digestUi);
+    if (refElement != showMore) {
+      digests.insertAfter(refDomImpl, digestUi);
+      list.insertAfter(digestUi.getElement(), refElement);
+    } else {
+      digests.insertBefore(refDomImpl, digestUi);
+      list.insertBefore(digestUi.getElement(), refElement);
+    }
     return digestUi;
   }
 

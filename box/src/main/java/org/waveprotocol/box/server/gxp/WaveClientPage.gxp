@@ -12,9 +12,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
 
-<!--
   GXP template for the wave client's landing page.
   Generate WaveClientPage.java file in gen/org/... with "ant gen_gxp".
   Author: kalman@google.com (Benjamin Kalman)
@@ -31,8 +29,8 @@
   <gxp:import class="org.waveprotocol.box.server.gxp.TopBar" />
   <gxp:param name='sessionJson' type='JSONObject' />
   <gxp:param name='clientFlags' type='JSONObject' />
+  <gxp:param name='websocketAddress' type='String' />
   <gxp:param name='topBar' type='HtmlClosure' />
-  <gxp:param name='useSocketIO' type='boolean' />
   <gxp:param name='analyticsAccount' type='String'/>
 
   <!-- Generate doctype to trigger standards mode -->
@@ -45,8 +43,8 @@
       <!-- Session variables. -->
       <script type="text/javascript" language="javascript">
         var __session = <gxp:eval expr='sessionJson' />;
+        var __websocket_address = <gxp:eval expr='websocketAddress' />;
         var __client_flags = <gxp:eval expr='clientFlags' />;
-        var __useSocketIO = <gxp:eval expr='useSocketIO' />;
       </script>
       <style type="text/css">
         /* TODO: Minimize this. */
@@ -86,6 +84,16 @@
         .banner {
           float: left;
           margin-left: 0.5em;
+        }
+
+        .earth {
+          /* Earth image is 24px high.  4px padding brings it to 32px, which is the topbar height. */
+          padding: 4px;
+          float: left;
+        }
+
+        .lang {
+          height: 19px;
         }
 
         .domain {

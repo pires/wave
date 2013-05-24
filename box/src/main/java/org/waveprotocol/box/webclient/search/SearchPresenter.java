@@ -1,24 +1,27 @@
 /**
- * Copyright 2011 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.box.webclient.search;
 
-import org.waveprotocol.box.webclient.client.ClientEvents;
-import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
+import com.google.gwt.core.client.GWT;
 import org.waveprotocol.box.webclient.search.Search.State;
+import org.waveprotocol.box.webclient.search.i18n.SearchPresenterMessages;
 import org.waveprotocol.wave.client.account.Profile;
 import org.waveprotocol.wave.client.account.ProfileListener;
 import org.waveprotocol.wave.client.scheduler.Scheduler.IncrementalTask;
@@ -55,6 +58,8 @@ public final class SearchPresenter
     /** Handles a wave selection action. */
     void onWaveSelected(WaveId id);
   }
+
+  private static final SearchPresenterMessages messages = GWT.create(SearchPresenterMessages.class);
 
   /** How often to repeat the search query. */
   private final static int POLLING_INTERVAL_MS = 15000; // 15s
@@ -95,9 +100,10 @@ public final class SearchPresenter
   private int querySize = DEFAULT_PAGE_SIZE;
   /** Current selected digest. */
   private DigestView selected;
-  
+
   /** The dispatcher of profiles events. */
   SourcesEvents<ProfileListener> profiles;
+  private boolean isRenderingInProgress = false;
 
   SearchPresenter(TimerService scheduler, Search search, SearchPanelView searchUi,
       WaveActionHandler actionHandler, SourcesEvents<ProfileListener> profiles) {
@@ -160,7 +166,7 @@ public final class SearchPresenter
   private void initToolbarMenu() {
     GroupingToolbar.View toolbarUi = searchUi.getToolbar();
     ToolbarView group = toolbarUi.addGroup();
-    new ToolbarButtonViewBuilder().setText("New Wave").applyTo(
+    new ToolbarButtonViewBuilder().setText(messages.newWave()).applyTo(
         group.addClickButton(), new ToolbarClickButton.Listener() {
           @Override
           public void onClicked() {
@@ -210,14 +216,15 @@ public final class SearchPresenter
     String totalStr;
     if (search.getTotal() != Search.UNKNOWN_SIZE) {
       resultEnd = Math.min(resultEnd, search.getTotal());
-      totalStr = String.valueOf(search.getTotal());
+      totalStr = messages.of(search.getTotal());
     } else {
-      totalStr = "unknown";
+      totalStr = messages.ofUnknown();
     }
     searchUi.setTitleText(queryText + " (0-" + resultEnd + " of " + totalStr + ")");
   }
 
   private void renderDigests() {
+    isRenderingInProgress = true;
     // Preserve selection on re-rendering.
     WaveId toSelect = selected != null ? digestUis.get(selected).getWaveId() : null;
     searchUi.clearDigests();
@@ -234,6 +241,7 @@ public final class SearchPresenter
         setSelected(digestUi);
       }
     }
+    isRenderingInProgress = false;
   }
 
   private void renderShowMore() {
@@ -272,7 +280,7 @@ public final class SearchPresenter
   public void onQueryEntered() {
     queryText = searchUi.getSearch().getQuery();
     querySize = DEFAULT_PAGE_SIZE;
-    searchUi.setTitleText("Searching...");
+    searchUi.setTitleText(messages.searching());
     doSearch();
   }
 
@@ -312,9 +320,60 @@ public final class SearchPresenter
     renderLater();
   }
 
+  /**
+   * Find the DigestView that contains a certain digest
+   *
+   * @param digest the digest the DigestView should contain.
+   * @return the DigestView containing the digest. {@null} if the digest is
+   *            not found.
+   */
+  private DigestView findDigestView(Digest digest) {
+    DigestView digestUi = searchUi.getFirst();
+    while(digestUi != null) {
+      if (digestUis.get(digestUi).equals(digest)) {
+        return digestUi;
+      }
+      digestUi = searchUi.getNext(digestUi);
+    }
+    return null;
+  }
+
+  /**
+   * Insert a digest before amongst the currently shown digests
+   *
+   * @param insertRef the DigestView to insert the new digest before. The new digest
+   *                    is inserted last if insertRef is {@null}.
+   * @param digest the digest to insert.
+   * @return the newly inserted DigestView.
+   */
+  private DigestView insertDigest(DigestView insertRef, Digest digest) {
+    DigestView newDigestUi = null;
+    if (insertRef != null) {
+      newDigestUi = searchUi.insertBefore(insertRef, digest);
+      digestUis.put(newDigestUi, digest);
+    } else {
+      insertRef = searchUi.getLast();
+      newDigestUi = searchUi.insertAfter(insertRef, digest);
+      digestUis.put(newDigestUi, digest);
+    }
+    return newDigestUi;
+  }
+
   @Override
   public void onDigestReady(int index, Digest digest) {
-    renderLater();
+    if (isRenderingInProgress) {
+      return;
+    }
+
+    setSelected(null);
+    DigestView digestToRemove = findDigestView(digest);
+    if (digestToRemove == null) {
+      return;
+    }
+    DigestView insertRef = searchUi.getNext(digestToRemove);
+    digestToRemove.remove();
+    DigestView newDigestUi = insertDigest(insertRef, digest);
+    setSelected(newDigestUi);
   }
 
   @Override

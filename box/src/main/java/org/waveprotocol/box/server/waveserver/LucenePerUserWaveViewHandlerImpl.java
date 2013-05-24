@@ -1,19 +1,22 @@
 /**
- * Copyright 2012 Apache Wave
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.box.server.waveserver;
 
 import static org.waveprotocol.box.server.waveserver.IndexFieldType.LMT;
@@ -207,7 +210,7 @@ public class LucenePerUserWaveViewHandlerImpl implements PerUserWaveViewHandler,
 
   @Override
   public ListenableFuture<Void> onParticipantRemoved(final WaveletName waveletName,
-      ParticipantId participant) {
+      final ParticipantId participant) {
     Preconditions.checkNotNull(waveletName);
     Preconditions.checkNotNull(participant);
 
@@ -219,7 +222,7 @@ public class LucenePerUserWaveViewHandlerImpl implements PerUserWaveViewHandler,
         try {
           waveletData = waveletProvider.getReadableWaveletData(waveletName);
           try {
-            removeIndex(waveletData, nrtManager);
+            removeParticipantfromIndex(waveletData, participant, nrtManager);
           } catch (CorruptIndexException e) {
             LOG.log(Level.SEVERE, "Failed to update index for " + waveletName, e);
             throw e;
@@ -305,6 +308,43 @@ public class LucenePerUserWaveViewHandlerImpl implements PerUserWaveViewHandler,
         BooleanClause.Occur.MUST);
     nrtManager.deleteDocuments(query);
   }
+
+  private static void removeParticipantfromIndex(ReadableWaveletData wavelet,
+      ParticipantId participant, NRTManager nrtManager) throws CorruptIndexException, IOException {
+    BooleanQuery query = new BooleanQuery();
+    Term waveIdTerm = new Term(WAVEID.toString(), wavelet.getWaveId().serialise());
+    query.add(new TermQuery(waveIdTerm), BooleanClause.Occur.MUST);
+    query.add(new TermQuery(new Term(WAVELETID.toString(), wavelet.getWaveletId().serialise())),
+        BooleanClause.Occur.MUST);
+    SearcherManager searcherManager = nrtManager.getSearcherManager(true);
+    IndexSearcher indexSearcher = searcherManager.acquire();
+    try {
+      TopDocs hints = indexSearcher.search(query, MAX_WAVES);
+      for (ScoreDoc hint : hints.scoreDocs) {
+        Document document = indexSearcher.doc(hint.doc);
+        String[] participantValues = document.getValues(WITH.toString());
+        document.removeFields(WITH.toString());
+        for (String address : participantValues) {
+          if (address.equals(participant.getAddress())) {
+            continue;
+          }
+          document.add(new Field(WITH.toString(), address, Field.Store.YES,
+              Field.Index.NOT_ANALYZED));
+        }
+        nrtManager.updateDocument(waveIdTerm, document);
+      }
+    } catch (IOException e) {
+      LOG.log(Level.WARNING, "Failed to fetch from index " + wavelet.toString(), e);
+    } finally {
+      try {
+        searcherManager.release(indexSearcher);
+      } catch (IOException e) {
+        LOG.log(Level.WARNING, "Failed to close searcher. ", e);
+      }
+      indexSearcher = null;
+    }
+  }
+
 
   @Override
   public Multimap<WaveId, WaveletId> retrievePerUserWaveView(ParticipantId user) {

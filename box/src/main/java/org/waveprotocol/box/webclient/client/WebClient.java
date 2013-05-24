@@ -1,18 +1,20 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.webclient.client;
@@ -22,12 +24,19 @@ import com.google.gwt.core.client.GWT;
 import com.google.gwt.core.client.GWT.UncaughtExceptionHandler;
 import com.google.gwt.dom.client.Document;
 import com.google.gwt.dom.client.Element;
+import com.google.gwt.dom.client.OptionElement;
+import com.google.gwt.dom.client.SelectElement;
+import com.google.gwt.event.dom.client.ChangeEvent;
+import com.google.gwt.http.client.UrlBuilder;
+import com.google.gwt.i18n.client.LocaleInfo;
 import com.google.gwt.resources.client.CssResource;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.user.client.Command;
 import com.google.gwt.user.client.History;
 import com.google.gwt.user.client.Timer;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.Window.Location;
 import com.google.gwt.user.client.ui.DockLayoutPanel;
 import com.google.gwt.user.client.ui.HTML;
 import com.google.gwt.user.client.ui.RootPanel;
@@ -41,6 +50,7 @@ import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
 import org.waveprotocol.box.webclient.client.events.WaveCreationEventHandler;
 import org.waveprotocol.box.webclient.client.events.WaveSelectionEvent;
 import org.waveprotocol.box.webclient.client.events.WaveSelectionEventHandler;
+import org.waveprotocol.box.webclient.client.i18n.WebClientMessages;
 import org.waveprotocol.box.webclient.profile.RemoteProfileManagerImpl;
 import org.waveprotocol.box.webclient.search.RemoteSearchService;
 import org.waveprotocol.box.webclient.search.Search;
@@ -63,6 +73,8 @@ import org.waveprotocol.wave.client.widget.popup.PopupChrome;
 import org.waveprotocol.wave.client.widget.popup.PopupChromeFactory;
 import org.waveprotocol.wave.client.widget.popup.PopupFactory;
 import org.waveprotocol.wave.client.widget.popup.UniversalPopup;
+import org.waveprotocol.wave.client.wavepanel.event.EventDispatcherPanel;
+import org.waveprotocol.wave.client.wavepanel.event.WaveChangeHandler;
 import org.waveprotocol.wave.model.id.IdGenerator;
 import org.waveprotocol.wave.model.id.WaveId;
 import org.waveprotocol.wave.model.wave.ParticipantId;
@@ -71,6 +83,7 @@ import org.waveprotocol.wave.model.waveref.WaveRef;
 import org.waveprotocol.wave.util.escapers.GwtWaverefEncoder;
 
 import java.util.Date;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -85,11 +98,15 @@ public class WebClient implements EntryPoint {
 
   private static final Binder BINDER = GWT.create(Binder.class);
 
+  private static final WebClientMessages messages = GWT.create(WebClientMessages.class);
+
   static Log LOG = Log.get(WebClient.class);
   // Use of GWT logging is only intended for sending exception reports to the
   // server, nothing else in the client should use java.util.logging.
   // Please also see WebClientDemo.gwt.xml.
   private static final Logger REMOTE_LOG = Logger.getLogger("REMOTE_LOG");
+
+  private static final String DEFAULT_LOCALE = "default";
 
   /** Creates a popup that warns about network disconnects. */
   private static UniversalPopup createTurbulencePopup() {
@@ -97,8 +114,8 @@ public class WebClient implements EntryPoint {
     UniversalPopup popup =
         PopupFactory.createPopup(null, new CenterPopupPositioner(), chrome, true);
     popup.add(new HTML("<div style='color: red; padding: 5px; text-align: center;'>"
-        + "<b>A turbulence detected!<br></br>"
-        + " Please save your last changes to somewhere and reload the wave.</b></div>"));
+        + "<b>" + messages.turbulenceDetected() + "<br></br> "
+        + messages.saveAndReloadWave() + "</b></div>"));
     return popup;
   }
 
@@ -140,6 +157,8 @@ public class WebClient implements EntryPoint {
 
   private RemoteViewServiceMultiplexer channel;
 
+  private LocaleService localeService = new RemoteLocaleService();
+
   /**
    * This is the entry point method.
    */
@@ -152,22 +171,22 @@ public class WebClient implements EntryPoint {
         new WaveCreationEventHandler() {
 
           @Override
-          public void onCreateRequest(WaveCreationEvent event) {
+          public void onCreateRequest(WaveCreationEvent event, Set<ParticipantId> participantSet) {
             LOG.info("WaveCreationEvent received");
             if (channel == null) {
               throw new RuntimeException("Spaghetti attack.  Create occured before login");
             }
-
-            openWave(WaveRef.of(idGenerator.newWaveId()), true);
+            openWave(WaveRef.of(idGenerator.newWaveId()), true, participantSet);
           }
         });
 
+    setupLocaleSelect();
     setupConnectionIndicator();
 
     HistorySupport.init(new HistoryProviderDefault());
     HistoryChangeListener.init();
 
-    websocket = new WaveWebSocketClient(useSocketIO(), getWebSocketBaseUrl(GWT.getModuleBaseURL()));
+    websocket = new WaveWebSocketClient(websocketNotAvailable(), getWebSocketBaseUrl());
     websocket.connect();
 
     if (Session.get().isLoggedIn()) {
@@ -208,7 +227,7 @@ public class WebClient implements EntryPoint {
         new SearchPresenter.WaveActionHandler() {
           @Override
           public void onCreateWave() {
-            ClientEvents.get().fireEvent(WaveCreationEvent.CREATE_NEW_WAVE);
+            ClientEvents.get().fireEvent(new WaveCreationEvent());
           }
 
           @Override
@@ -224,11 +243,42 @@ public class WebClient implements EntryPoint {
     // Hide the frame until waves start getting opened.
     UIObject.setVisible(waveFrame.getElement(), false);
 
+    Document.get().getElementById("signout").setInnerText(messages.signout());
+
     // Handles opening waves.
     ClientEvents.get().addWaveSelectionEventHandler(new WaveSelectionEventHandler() {
       @Override
       public void onSelection(WaveRef waveRef) {
-        openWave(waveRef, false);
+        openWave(waveRef, false, null);
+      }
+    });
+  }
+
+  private void setupLocaleSelect() {
+    final SelectElement select = (SelectElement) Document.get().getElementById("lang");
+    String currentLocale = LocaleInfo.getCurrentLocale().getLocaleName();
+    String[] localeNames = LocaleInfo.getAvailableLocaleNames();
+    for (String locale : localeNames) {
+      if (!DEFAULT_LOCALE.equals(locale)) {
+        String displayName = LocaleInfo.getLocaleNativeDisplayName(locale);
+        OptionElement option = Document.get().createOptionElement();
+        option.setValue(locale);
+        option.setText(displayName);
+        select.add(option, null);
+        if (locale.equals(currentLocale)) {
+          select.setSelectedIndex(select.getLength() - 1);
+        }
+      }
+    }
+    EventDispatcherPanel.of(select).registerChangeHandler(null, new WaveChangeHandler() {
+
+      @Override
+      public boolean onChange(ChangeEvent event, Element context) {
+        UrlBuilder builder = Location.createUrlBuilder().setParameter(
+                "locale", select.getValue());
+        Window.Location.replace(builder.buildString());
+        localeService.storeLocale(select.getValue());
+        return true;
       }
     });
   }
@@ -245,13 +295,13 @@ public class WebClient implements EntryPoint {
           switch (event.getStatus()) {
             case CONNECTED:
             case RECONNECTED:
-              element.setInnerText("Online");
+              element.setInnerText(messages.online());
               element.setClassName("online");
               isTurbulenceDetected = false;
               turbulencePopup.hide();
               break;
             case DISCONNECTED:
-              element.setInnerText("Offline");
+              element.setInnerText(messages.offline());
               element.setClassName("offline");
               if (!isTurbulenceDetected) {
                 isTurbulenceDetected = true;
@@ -259,7 +309,7 @@ public class WebClient implements EntryPoint {
               }
               break;
             case RECONNECTING:
-              element.setInnerText("Connecting...");
+              element.setInnerText(messages.connecting());
               element.setClassName("connecting");
               break;
           }
@@ -272,9 +322,9 @@ public class WebClient implements EntryPoint {
    * Returns <code>ws(s)://yourhost[:port]/</code>.
    */
   // XXX check formatting wrt GPE
-  private native String getWebSocketBaseUrl(String moduleBase) /*-{return ((window.location.protocol == "https:") ? "wss" : "ws") + /:\/\/[^\/]+/.exec(moduleBase)[0] + "/";}-*/;
+  private native String getWebSocketBaseUrl() /*-{return ((window.location.protocol == "https:") ? "wss" : "ws") + "://" +  $wnd.__websocket_address + "/";}-*/;
 
-  private native boolean useSocketIO() /*-{ return !window.WebSocket }-*/;
+  private native boolean websocketNotAvailable() /*-{ return !window.WebSocket }-*/;
 
   /**
    */
@@ -288,8 +338,10 @@ public class WebClient implements EntryPoint {
    *
    * @param waveRef wave id to open
    * @param isNewWave whether the wave is being created by this client session.
+   * @param participants the participants to add to the newly created wave.
+   *        {@code null} if only the creator should be added
    */
-  private void openWave(WaveRef waveRef, boolean isNewWave) {
+  private void openWave(WaveRef waveRef, boolean isNewWave, Set<ParticipantId> participants) {
     LOG.info("WebClient.openWave()");
 
     if (wave != null) {
@@ -304,7 +356,7 @@ public class WebClient implements EntryPoint {
     Element unsavedIndicator = Document.get().getElementById("unsavedStateContainer");
     StagesProvider wave =
         new StagesProvider(holder, unsavedIndicator, waveHolder, waveFrame, waveRef, channel, idGenerator,
-            profiles, waveStore, isNewWave, Session.get().getDomain());
+            profiles, waveStore, isNewWave, Session.get().getDomain(), participants);
     this.wave = wave;
     wave.load(new Command() {
       @Override

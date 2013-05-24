@@ -12,9 +12,8 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
 
-<!--
+
   GXP template for the user authentication (login) page.
   Generate "ant gen_gxp".
   Author: gentle@google.com (Joseph Gentle)
@@ -29,6 +28,7 @@
   <gxp:param name='domain' type='String' />
   <gxp:param name='message' type='String' />
   <gxp:param name='responseType' type='String' />
+  <gxp:param name='disableLoginPage' type='Boolean' />
   <gxp:param name='analyticsAccount' type='String'/>
 
   <html dir="ltr">
@@ -118,6 +118,10 @@
       </table>
       </td>
       <td valign="top" align="center" style="padding-right: 30px">
+      <gxp:if cond='disableLoginPage == true'>
+      HTTP Authentication disabled by Administrator. Install and use your certificate instead.
+      </gxp:if>
+      <gxp:if cond='disableLoginPage == false'>
       <form id="wiab_loginform" action="" method="post">
       <table class="form-noindent" style="padding: 1;" border="0"
         align="right">
@@ -190,6 +194,7 @@
         </tr>
       </table>
       </form>
+      </gxp:if>
       </td>
     </tr>
   </table>

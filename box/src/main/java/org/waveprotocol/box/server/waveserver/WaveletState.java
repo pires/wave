@@ -1,35 +1,36 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.waveserver;
 
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.protobuf.InvalidProtocolBufferException;
+import java.io.IOException;
 
-import org.waveprotocol.box.common.DeltaSequence;
+import org.waveprotocol.box.common.Receiver;
+
 import org.waveprotocol.wave.federation.Proto.ProtocolAppliedWaveletDelta;
 import org.waveprotocol.wave.model.id.WaveletName;
 import org.waveprotocol.wave.model.operation.OperationException;
 import org.waveprotocol.wave.model.operation.wave.TransformedWaveletDelta;
 import org.waveprotocol.wave.model.version.HashedVersion;
 import org.waveprotocol.wave.model.wave.data.ReadableWaveletData;
-
-import java.io.IOException;
-import java.util.Collection;
 
 /**
  * The state of a wavelet, including its delta history. Combines persisted and
@@ -82,11 +83,11 @@ interface WaveletState {
   TransformedWaveletDelta getTransformedDeltaByEndVersion(HashedVersion endVersion);
 
   /**
-   * @return the transformed deltas from the one applied at the given start
-   *         version until the one resulting in the given end version, if these
-   *         exist, otherwise null.
+   * Gets the transformed deltas from the one applied at the given start version
+   * until the one resulting in the given end version or receiver will interrupt.
    */
-  DeltaSequence getTransformedDeltaHistory(HashedVersion startVersion, HashedVersion endVersion);
+  void getTransformedDeltaHistory(HashedVersion startVersion, HashedVersion endVersion,
+      Receiver<TransformedWaveletDelta> receiver);
 
   /**
    * @return the applied delta applied at the given version, if it exists,
@@ -102,12 +103,12 @@ interface WaveletState {
       HashedVersion endVersion);
 
   /**
-   * @return the applied deltas from the one applied at the given start version
-   *         until the one resulting in the given end version, if these exist,
-   *         otherwise null.
+   * Gets the applied deltas from the one applied at the given start version
+   * until the one resulting in the given end version or receiver will interrupt.
    */
-  Collection<ByteStringMessage<ProtocolAppliedWaveletDelta>> getAppliedDeltaHistory(
-      HashedVersion startVersion, HashedVersion endVersion);
+   void getAppliedDeltaHistory(
+      HashedVersion startVersion, HashedVersion endVersion,
+      Receiver<ByteStringMessage<ProtocolAppliedWaveletDelta>> receiver);
 
   /**
    * Appends the delta to the in-memory delta history.
@@ -116,8 +117,7 @@ interface WaveletState {
    * The caller must make a subsequent call to {@link #persist(HashedVersion)}
    * to persist the appended delta.
    */
-  void appendDelta(HashedVersion appliedAtVersion, TransformedWaveletDelta transformedDelta,
-      ByteStringMessage<ProtocolAppliedWaveletDelta> appliedDelta)
+  void appendDelta(WaveletDeltaRecord deltaRecord)
       throws InvalidProtocolBufferException, OperationException;
 
   /**

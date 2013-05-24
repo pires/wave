@@ -1,18 +1,20 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.waveserver;
@@ -20,6 +22,7 @@ package org.waveprotocol.box.server.waveserver;
 import com.google.common.collect.ImmutableSet;
 
 import org.waveprotocol.box.common.ExceptionalIterator;
+import org.waveprotocol.box.common.Receiver;
 import org.waveprotocol.box.server.frontend.CommittedWaveletSnapshot;
 import org.waveprotocol.wave.federation.Proto.ProtocolWaveletDelta;
 import org.waveprotocol.wave.model.id.WaveId;
@@ -28,8 +31,6 @@ import org.waveprotocol.wave.model.id.WaveletName;
 import org.waveprotocol.wave.model.operation.wave.TransformedWaveletDelta;
 import org.waveprotocol.wave.model.version.HashedVersion;
 import org.waveprotocol.wave.model.wave.ParticipantId;
-
-import java.util.Collection;
 
 /**
  * Provides wavelet snapshots and history, and accepts delta submissions to
@@ -78,14 +79,14 @@ public interface WaveletProvider {
    * @param waveletName name of wavelet.
    * @param versionStart start version (inclusive), minimum 0.
    * @param versionEnd end version (exclusive).
-   * @return deltas in the range as requested, ordered by applied version.
+   * @param receiver of deltas.
    * @throws AccessControlException if {@code versionStart} or
    *         {@code versionEnd} are not in the wavelet history.
    * @throws WaveServerException if storage access fails or if the wavelet is in
    *         a bad state
    */
-  Collection<TransformedWaveletDelta> getHistory(WaveletName waveletName,
-      HashedVersion versionStart, HashedVersion versionEnd) throws WaveServerException;
+  void getHistory(WaveletName waveletName, HashedVersion versionStart, HashedVersion versionEnd,
+      Receiver<TransformedWaveletDelta> receiver) throws WaveServerException;
 
   /**
    * Check if the specified participantId has access to the named wavelet.

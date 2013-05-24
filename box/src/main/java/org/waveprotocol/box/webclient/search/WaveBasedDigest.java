@@ -1,24 +1,29 @@
 /**
- * Copyright 2011 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.box.webclient.search;
 
+import org.waveprotocol.box.common.Snippets;
 import org.waveprotocol.wave.client.state.BlipReadStateMonitor;
 import org.waveprotocol.wave.model.conversation.Conversation;
 import org.waveprotocol.wave.model.conversation.ConversationStructure;
+import org.waveprotocol.wave.model.conversation.TitleHelper;
 import org.waveprotocol.wave.model.id.IdUtil;
 import org.waveprotocol.wave.model.id.WaveId;
 import org.waveprotocol.wave.model.util.CollectionUtils;
@@ -30,8 +35,10 @@ import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.model.wave.WaveViewListener;
 import org.waveprotocol.wave.model.wave.Wavelet;
 import org.waveprotocol.wave.model.wave.WaveletListener;
+import org.waveprotocol.wave.model.wave.data.ObservableWaveletData;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Produces a digest from a wave.
@@ -46,8 +53,6 @@ public final class WaveBasedDigest
 
   /** The wave to digest. */
   private final WaveContext wave;
-  /** An alternative digest for this wave - really just used for the snippet. */
-  private Digest delegate;
   /** Observers of this digest. */
   // TODO(hearnden): make a single listener.
   private final CopyOnWriteSet<Listener> listeners = CopyOnWriteSet.create();
@@ -56,17 +61,17 @@ public final class WaveBasedDigest
   private List<ParticipantId> participantSnippet;
   private ParticipantId author;
   private double lastModified = NO_TIME;
+  String snippet = null;
 
-  WaveBasedDigest(WaveContext wave, Digest delegate) {
+  WaveBasedDigest(WaveContext wave) {
     this.wave = wave;
-    this.delegate = delegate;
   }
 
   /**
    * Creates a digest.
    */
-  public static WaveBasedDigest create(WaveContext wave, Digest delegate) {
-    WaveBasedDigest digest = new WaveBasedDigest(wave, delegate);
+  public static WaveBasedDigest create(WaveContext wave) {
+    WaveBasedDigest digest = new WaveBasedDigest(wave);
     digest.init();
     return digest;
   }
@@ -83,22 +88,11 @@ public final class WaveBasedDigest
    * Releases listeners from observed resources.
    */
   void destroy() {
-    setDelegate(null);
     wave.getBlipMonitor().removeListener(this);
     wave.getWave().removeListener(this);
     for (ObservableWavelet wavelet : wave.getWave().getWavelets()) {
       wavelet.removeListener(this);
     }
-  }
-
-  /**
-   * Sets this digest's delegate. This digest sources answers from its delegate
-   * for queries that it is unable to compute from the wave itself. The delegate
-   * may be replaced.
-   */
-  void setDelegate(Digest delegate) {
-    this.delegate = delegate;
-    fireOnChanged();
   }
 
   private void ensureParticipants() {
@@ -161,6 +155,7 @@ public final class WaveBasedDigest
     }
   }
 
+  @SuppressWarnings("unused")
   private void invalidateLmt() {
     lastModified = NO_TIME;
   }
@@ -184,14 +179,14 @@ public final class WaveBasedDigest
 
   @Override
   public String getTitle() {
-    // Titles are not yet supported in Conversation model.
-    return delegate.getTitle();
+    return TitleHelper.extractTitle(
+        wave.getConversations().getRoot().getRootThread().getFirstBlip().getContent());
   }
 
   @Override
   public String getSnippet() {
-    // Client-side snippeting is not supported.
-    return delegate.getSnippet();
+    updateSnippet(wave.getWave().getRoot());
+    return snippet;
   }
 
   @Override
@@ -246,10 +241,25 @@ public final class WaveBasedDigest
     fireOnChanged();
   }
 
+  private void updateSnippet(ObservableWavelet wavelet) {
+    ObservableWaveletData waveletData = wavelet.getWaveletData();
+    if (waveletData != null){
+      Set<String> docsIds = waveletData.getDocumentIds();
+      if (!docsIds.contains("conversation")) {
+        return;
+      }
+      snippet = Snippets.renderSnippet(waveletData, Snippets.DIGEST_SNIPPET_LENGTH).trim();
+      String title = getTitle();
+      if (snippet.startsWith(title) && !title.isEmpty()) {
+        // Strip the title from the snippet if the snippet starts with the title.
+        snippet = snippet.substring(title.length());
+      }
+    }
+  }
+
   @Override
   public void onLastModifiedTimeChanged(ObservableWavelet wavelet, long oldTime, long newTime) {
-    if (oldTime >= lastModified || lastModified <= newTime) {
-      invalidateLmt();
+    if (newTime != oldTime) {
       fireOnChanged();
     }
   }

@@ -1,18 +1,20 @@
 /**
- * Copyright 2010 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.rpc;
@@ -22,23 +24,28 @@ import com.google.gxp.base.GxpContext;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.waveprotocol.box.common.SessionConstants;
 import org.waveprotocol.box.server.CoreSettings;
 import org.waveprotocol.box.server.authentication.SessionManager;
 import org.waveprotocol.box.server.gxp.TopBar;
 import org.waveprotocol.box.server.gxp.WaveClientPage;
 import org.waveprotocol.box.server.util.RandomBase64Generator;
+import org.waveprotocol.box.server.account.AccountData;
+import org.waveprotocol.box.server.util.UrlParameters;
 import org.waveprotocol.wave.client.util.ClientFlagsBase;
 import org.waveprotocol.wave.common.bootstrap.FlagConstants;
 import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.util.logging.Log;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 
 import javax.inject.Singleton;
 import javax.servlet.http.HttpServlet;
@@ -67,9 +74,10 @@ public class WaveClientServlet extends HttpServlet {
   }
 
   private final String domain;
-  private final Boolean useSocketIO;
   private final String analyticsAccount;
   private final SessionManager sessionManager;
+  private final String websocketAddress;
+  private final String websocketPresentedAddress;
 
   /**
    * Creates a servlet for the wave client.
@@ -77,11 +85,16 @@ public class WaveClientServlet extends HttpServlet {
   @Inject
   public WaveClientServlet(
       @Named(CoreSettings.WAVE_SERVER_DOMAIN) String domain,
-      @Named(CoreSettings.USE_SOCKETIO) Boolean useSocketIO,
+      @Named(CoreSettings.HTTP_FRONTEND_ADDRESSES) List<String> httpAddresses,
+      @Named(CoreSettings.HTTP_WEBSOCKET_PUBLIC_ADDRESS) String websocketAddress,
+      @Named(CoreSettings.HTTP_WEBSOCKET_PRESENTED_ADDRESS) String websocketPresentedAddress,
       @Named(CoreSettings.ANALYTICS_ACCOUNT) String analyticsAccount,
       SessionManager sessionManager) {
     this.domain = domain;
-    this.useSocketIO = useSocketIO;
+    this.websocketAddress = StringUtils.isEmpty(websocketAddress) ?
+        httpAddresses.get(0) : websocketAddress;
+    this.websocketPresentedAddress = StringUtils.isEmpty(websocketPresentedAddress) ?
+        this.websocketAddress : websocketPresentedAddress;
     this.analyticsAccount = analyticsAccount;
     this.sessionManager = sessionManager;
   }
@@ -99,18 +112,26 @@ public class WaveClientServlet extends HttpServlet {
       return;
     }
 
-    String username = null;
-    String userDomain = null;
-    if (id != null) {
-      String[] parts = id.getAddress().split("@");
-      username = parts[0];
-      userDomain = id.getDomain();
+    AccountData account = sessionManager.getLoggedInAccount(request.getSession(false));
+    if (account != null) {
+      String locale = account.asHuman().getLocale();
+      if (locale != null) {
+        String requestLocale = UrlParameters.getParameters(request.getQueryString()).get("locale");
+        if (requestLocale == null) {
+          response.sendRedirect(UrlParameters.addParameter(request.getRequestURL().toString(), "locale", locale));
+          return;
+        }
+      }
     }
+
+    String[] parts = id.getAddress().split("@");
+    String username = parts[0];
+    String userDomain = id.getDomain();
 
     try {
       WaveClientPage.write(response.getWriter(), new GxpContext(request.getLocale()),
-          getSessionJson(request.getSession(false)), getClientFlags(request),
-          TopBar.getGxpClosure(username, userDomain), useSocketIO, analyticsAccount);
+          getSessionJson(request.getSession(false)), getClientFlags(request), websocketPresentedAddress,
+          TopBar.getGxpClosure(username, userDomain), analyticsAccount);
     } catch (IOException e) {
       LOG.warning("Failed to write GXP for request " + request, e);
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);

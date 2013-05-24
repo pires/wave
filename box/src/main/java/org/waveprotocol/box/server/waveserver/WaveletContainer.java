@@ -1,24 +1,25 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.waveserver;
 
-import com.google.common.base.Function;
-
+import org.waveprotocol.box.common.Receiver;
 import org.waveprotocol.box.server.frontend.CommittedWaveletSnapshot;
 import org.waveprotocol.wave.federation.Proto.ProtocolAppliedWaveletDelta;
 import org.waveprotocol.wave.model.id.WaveletName;
@@ -28,7 +29,7 @@ import org.waveprotocol.wave.model.wave.ParticipantId;
 import org.waveprotocol.wave.model.wave.data.ObservableWaveletData;
 import org.waveprotocol.wave.model.wave.data.ReadableWaveletData;
 
-import java.util.Collection;
+import com.google.common.base.Function;
 
 /**
  * Interface for a container class for a Wavelet's current state as well as its
@@ -56,10 +57,10 @@ interface WaveletContainer {
 
   /** Returns a snapshot of the wavelet state, last committed version. */
   CommittedWaveletSnapshot getSnapshot() throws WaveletStateException;
-  
+
   /**
    * Provides read access to the inner state of the {@link WaveletContainer}.
-   * 
+   *
    * @param <T> the return type of the method.
    * @param function the function to apply on the {@link ReadableWaveletData}.
    * @return the output of the function.
@@ -72,15 +73,14 @@ interface WaveletContainer {
    *
    * @param versionStart start version (inclusive), minimum 0.
    * @param versionEnd end version (exclusive).
-   * @return serialised {@code ProtocolAppliedWaveletDelta}s in the range as
-   *         requested, ordered by applied version.
+   * @param receiver the deltas receiver.
    * @throws AccessControlException if {@code versionStart} or
    *         {@code versionEnd} are not in the wavelet history.
    * @throws WaveletStateException if the wavelet is in a state unsuitable for
    *         retrieving history.
    */
-  Collection<ByteStringMessage<ProtocolAppliedWaveletDelta>> requestHistory(
-      HashedVersion versionStart, HashedVersion versionEnd)
+  void requestHistory(HashedVersion versionStart, HashedVersion versionEnd,
+      Receiver<ByteStringMessage<ProtocolAppliedWaveletDelta>> receiver)
       throws AccessControlException, WaveletStateException;
 
   /**
@@ -89,14 +89,15 @@ interface WaveletContainer {
    *
    * @param versionStart start version (inclusive), minimum 0.
    * @param versionEnd end version (exclusive).
-   * @return deltas in the range as requested, ordered by applied version.
+   * @param receiver the deltas receiver.
    * @throws AccessControlException if {@code versionStart} or
    *         {@code versionEnd} are not in the wavelet history.
    * @throws WaveletStateException if the wavelet is in a state unsuitable for
    *         retrieving history.
    */
-  Collection<TransformedWaveletDelta> requestTransformedHistory(HashedVersion versionStart,
-      HashedVersion versionEnd) throws AccessControlException, WaveletStateException;
+  void requestTransformedHistory(HashedVersion versionStart, HashedVersion versionEnd,
+      Receiver<TransformedWaveletDelta> receiver)
+      throws AccessControlException, WaveletStateException;
 
   /**
    * @param participantId id of participant attempting to gain access to
@@ -123,7 +124,7 @@ interface WaveletContainer {
    *          Each invocation acquires and releases the lock.
    */
   boolean hasParticipant(ParticipantId participant) throws WaveletStateException;
-  
+
   /**
    * @return the wavelet creator. This method doesn't acquire
    *         {@link WaveletContainer} lock since wavelet creator cannot change
@@ -131,12 +132,12 @@ interface WaveletContainer {
    *         read this property without lock.
    */
   ParticipantId getCreator();
-  
+
   /**
    * This method doesn't acquire {@link WaveletContainer} lock since shared
    * domain participant cannot change and therefore it is safe to concurrently
    * read this property without lock.
-   * 
+   *
    * @return the shared domain participant.
    */
   public ParticipantId getSharedDomainParticipant();
@@ -145,5 +146,5 @@ interface WaveletContainer {
    * @return true if the wavelet is at version zero, i.e., has no delta history
    */
   boolean isEmpty() throws WaveletStateException;
-  
+
 }

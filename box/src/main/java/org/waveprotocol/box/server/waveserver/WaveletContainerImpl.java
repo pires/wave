@@ -1,22 +1,25 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.waveserver;
 
+import org.waveprotocol.box.common.Receiver;
 import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
@@ -29,6 +32,7 @@ import org.waveprotocol.box.common.DeltaSequence;
 import org.waveprotocol.box.server.frontend.CommittedWaveletSnapshot;
 import org.waveprotocol.box.server.persistence.PersistenceException;
 import org.waveprotocol.box.server.util.WaveletDataUtil;
+import org.waveprotocol.box.common.ListReceiver;
 import org.waveprotocol.wave.federation.Proto.ProtocolAppliedWaveletDelta;
 import org.waveprotocol.wave.model.id.WaveletName;
 import org.waveprotocol.wave.model.operation.OperationException;
@@ -45,7 +49,6 @@ import org.waveprotocol.wave.model.wave.data.ObservableWaveletData;
 import org.waveprotocol.wave.model.wave.data.ReadableWaveletData;
 import org.waveprotocol.wave.util.logging.Log;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -367,12 +370,9 @@ abstract class WaveletContainerImpl implements WaveletContainer {
     HashedVersion targetVersion = submittedDelta.getTargetVersion();
     HashedVersion currentVersion = getCurrentVersion();
     Preconditions.checkArgument(!targetVersion.equals(currentVersion));
-    DeltaSequence serverDeltas =
-        waveletState.getTransformedDeltaHistory(targetVersion, currentVersion);
-    if (serverDeltas == null) {
-      LOG.warning("Attempt to apply delta at unknown hashed version " + targetVersion);
-      throw new InvalidHashException(currentVersion, targetVersion);
-    }
+    ListReceiver<TransformedWaveletDelta> receiver = new ListReceiver<TransformedWaveletDelta>();
+    waveletState.getTransformedDeltaHistory(targetVersion, currentVersion, receiver);
+    DeltaSequence serverDeltas = DeltaSequence.of(receiver);
     Preconditions.checkState(!serverDeltas.isEmpty(),
         "No deltas between valid versions %s and %s", targetVersion, currentVersion);
 
@@ -437,9 +437,12 @@ abstract class WaveletContainerImpl implements WaveletContainer {
       throws InvalidProtocolBufferException, OperationException {
     TransformedWaveletDelta transformedDelta =
         AppliedDeltaUtil.buildTransformedDelta(appliedDelta, transformed);
-    waveletState.appendDelta(transformed.getTargetVersion(), transformedDelta, appliedDelta);
 
-    return new WaveletDeltaRecord(transformed.getTargetVersion(), appliedDelta, transformedDelta);
+    WaveletDeltaRecord deltaRecord = new WaveletDeltaRecord(transformed.getTargetVersion(),
+        appliedDelta, transformedDelta);
+    waveletState.appendDelta(deltaRecord);
+
+    return deltaRecord;
   }
 
   /**
@@ -480,30 +483,30 @@ abstract class WaveletContainerImpl implements WaveletContainer {
   }
 
   @Override
-  public Collection<ByteStringMessage<ProtocolAppliedWaveletDelta>> requestHistory(
-      HashedVersion startVersion, HashedVersion endVersion)
+  public void requestHistory(HashedVersion startVersion, HashedVersion endVersion,
+      Receiver<ByteStringMessage<ProtocolAppliedWaveletDelta>> receiver) 
       throws AccessControlException, WaveletStateException {
     acquireReadLock();
     try {
       checkStateOk();
       checkVersionIsDeltaBoundary(startVersion, "start version");
       checkVersionIsDeltaBoundary(endVersion, "end version");
-      return waveletState.getAppliedDeltaHistory(startVersion, endVersion);
+      waveletState.getAppliedDeltaHistory(startVersion, endVersion, receiver);
     } finally {
       releaseReadLock();
     }
   }
 
   @Override
-  public Collection<TransformedWaveletDelta> requestTransformedHistory(HashedVersion startVersion,
-      HashedVersion endVersion) throws AccessControlException, WaveletStateException {
+  public void requestTransformedHistory(HashedVersion startVersion, HashedVersion endVersion,
+      Receiver<TransformedWaveletDelta> receiver) throws AccessControlException, WaveletStateException {
     awaitLoad();
     acquireReadLock();
     try {
       checkStateOk();
       checkVersionIsDeltaBoundary(startVersion, "start version");
       checkVersionIsDeltaBoundary(endVersion, "end version");
-      return waveletState.getTransformedDeltaHistory(startVersion, endVersion);
+      waveletState.getTransformedDeltaHistory(startVersion, endVersion, receiver);
     } finally {
       releaseReadLock();
     }
@@ -521,8 +524,6 @@ abstract class WaveletContainerImpl implements WaveletContainer {
       releaseReadLock();
     }
   }
-
-
 
   @Override
   public ParticipantId getSharedDomainParticipant() {

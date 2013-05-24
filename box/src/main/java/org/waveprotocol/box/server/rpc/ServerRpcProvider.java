@@ -1,18 +1,20 @@
 /**
- * Copyright 2009 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package org.waveprotocol.box.server.rpc;
@@ -44,6 +46,7 @@ import com.glines.socketio.server.transport.XHRMultipartTransport;
 import com.glines.socketio.server.transport.XHRPollingTransport;
 import com.glines.socketio.server.transport.jetty.JettyWebSocketTransport;
 
+import org.apache.commons.lang.StringUtils;
 import org.eclipse.jetty.http.ssl.SslContextFactory;
 import org.eclipse.jetty.server.ssl.SslSelectChannelConnector;
 import org.eclipse.jetty.server.Connector;
@@ -70,6 +73,7 @@ import org.waveprotocol.wave.util.logging.Log;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
+import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -339,6 +343,7 @@ public class ServerRpcProvider {
 
   @Inject
   public ServerRpcProvider(@Named(CoreSettings.HTTP_FRONTEND_ADDRESSES) List<String> httpAddresses,
+      @Named(CoreSettings.HTTP_WEBSOCKET_PUBLIC_ADDRESS) String websocketAddress,
       @Named(CoreSettings.FLASHSOCKET_POLICY_PORT) Integer flashsocketPolicyPort,
       @Named(CoreSettings.RESOURCE_BASES) List<String> resourceBases,
       SessionManager sessionManager, org.eclipse.jetty.server.SessionManager jettySessionManager,
@@ -346,7 +351,7 @@ public class ServerRpcProvider {
       @Named(CoreSettings.ENABLE_SSL) boolean sslEnabled,
       @Named(CoreSettings.SSL_KEYSTORE_PATH) String sslKeystorePath,
       @Named(CoreSettings.SSL_KEYSTORE_PASSWORD) String sslKeystorePassword) {
-    this(parseAddressList(httpAddresses), flashsocketPolicyPort, resourceBases
+    this(parseAddressList(httpAddresses, websocketAddress), flashsocketPolicyPort, resourceBases
         .toArray(new String[0]), sessionManager, jettySessionManager, sessionStoreDir,
         sslEnabled, sslKeystorePath, sslKeystorePassword);
   }
@@ -482,12 +487,17 @@ public class ServerRpcProvider {
     };
   }
 
-  private static InetSocketAddress[] parseAddressList(List<String> addressList) {
+  private static InetSocketAddress[] parseAddressList(List<String> addressList, String websocketAddress) {
     if (addressList == null || addressList.size() == 0) {
       return new InetSocketAddress[0];
     } else {
       Set<InetSocketAddress> addresses = Sets.newHashSet();
-      for (String str : addressList) {
+      // We add the websocketAddress as another listening address.
+      ArrayList<String> mergedAddressList = new ArrayList<String>(addressList);
+      if (!StringUtils.isEmpty(websocketAddress)) {
+        mergedAddressList.add(websocketAddress);
+      }
+      for (String str : mergedAddressList) {
         if (str.length() == 0) {
           LOG.warning("Encountered empty address in http addresses list.");
         } else {
@@ -532,6 +542,11 @@ public class ServerRpcProvider {
       sslContextFactory.setKeyStorePassword(sslKeystorePassword);
       sslContextFactory.setAllowRenegotiate(false);
       sslContextFactory.setExcludeCipherSuites(excludeCiphers);
+
+      // Note: we only actually needed client auth for AuthenticationServlet.
+      // Using Need instead of Want prevents web-sockets from working on
+      // Chrome.
+      sslContextFactory.setWantClientAuth(true);
     }
 
     for (InetSocketAddress address : httpAddresses) {

@@ -12,9 +12,7 @@
   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
   See the License for the specific language governing permissions and
   limitations under the License.
--->
 
-<!--
   GXP template for the bar up the top of the page showing who you're logged in as.
   Author: josephg@gmail.com (Joseph Gentle)
 -->
@@ -38,10 +36,12 @@
         <a href="/auth/signin?r=/">Sign In</a>
       </gxp:if>
       <gxp:if cond='username != null'>
+        <img src="/static/earth.png" alt="earth" class="earth" />
+        <select id="lang" class="lang" size="1"/> |
         <gxp:eval expr='username' /><span class="domain">@<gxp:eval expr='domain' /></span> |
         <span id='unsavedStateContainer' style="width: 60px">Saved</span> |
         <span id="netstatus" class="offline">Offline</span> |
-        <a href="/auth/signout?r=/">Sign out</a>
+        <a id="signout" href="/auth/signout?r=/">Sign out</a>
       </gxp:if>
     </div>
   </div>

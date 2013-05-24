@@ -1,23 +1,28 @@
 /**
- * Copyright 2011 Google Inc.
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
+
 package org.waveprotocol.box.webclient.search;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.gwt.http.client.Request;
+import com.google.gwt.user.client.Window;
 
 import org.waveprotocol.box.webclient.search.SearchService.Callback;
 import org.waveprotocol.box.webclient.search.SearchService.DigestSnapshot;
@@ -78,7 +83,7 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
      */
     void activate(WaveContext wave) {
       Preconditions.checkState(dynamicDigest == null);
-      dynamicDigest = WaveBasedDigest.create(wave, staticDigest);
+      dynamicDigest = WaveBasedDigest.create(wave);
       dynamicDigest.addListener(this);
       fireOnChanged();
     }
@@ -98,14 +103,11 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
     }
 
     /**
-     * Updates the static digest. If this proxy is not currently live, this
-     * fires a change event.
+     * Updates the static digest. Do nothing if this digest is currently live.
      */
     void update(DigestSnapshot snapshot) {
       staticDigest = snapshot;
-      if (dynamicDigest != null) {
-        dynamicDigest.setDelegate(staticDigest);
-      } else {
+      if (dynamicDigest == null) {
         fireOnChanged();
       }
     }
@@ -200,6 +202,12 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
   /** Total size of the search result. */
   private int total = 0;
 
+  private Request previousRequest;
+
+  private String previousQuery;
+
+  private int previousSize;
+
   @VisibleForTesting
   SimpleSearch(SearchService searcher, WaveStore store) {
     this.searcher = searcher;
@@ -245,11 +253,20 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
 
   @Override
   public void find(String query, int size) {
-    Callback request = new Callback() {
+    if (previousRequest != null && previousRequest.isPending()) {
+      if (query.equals(previousQuery) && size == previousSize) {
+        // Same query, we should wait to the response
+        return;
+      }
+    }
+    previousQuery = query;
+    previousSize = size;
+    Callback callback = new Callback() {
       @Override
       public void onFailure(String message) {
         if (outstanding == this) {
           outstanding = null;
+          previousRequest = null;
           handleFailure(message);
         }
       }
@@ -258,18 +275,19 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
       public void onSuccess(int total, List<DigestSnapshot> snapshots) {
         if (outstanding == this) {
           outstanding = null;
+          previousRequest = null;
           handleSuccess(total, 0, snapshots);
         }
       }
     };
 
     if (outstanding == null) {
-      outstanding = request;
-      searcher.search(query, 0, size, request);
+      outstanding = callback;
+      previousRequest = searcher.search(query, 0, size, callback);
       fireOnStateChanged();
     } else {
-      outstanding = request;
-      searcher.search(query, 0, size, request);
+      outstanding = callback;
+      previousRequest = searcher.search(query, 0, size, callback);
     }
   }
 
@@ -311,19 +329,17 @@ public final class SimpleSearch implements Search, WaveStore.Listener {
         DigestProxy oldDigest = getDigest(i);
         results.remove(i);
         digests.remove(ModernIdSerialiser.INSTANCE.serialiseWaveId(oldDigest.getWaveId()));
-        fireOnDigestRemoved(i, oldDigest);
         oldDigest.destroy();
       }
       // Now grow from nothing up to the new result size.
       if (this.total != total) {
         this.total = total;
-        fireOnTotalChanged(total);
       }
       ensureMinimumSize(total == Search.UNKNOWN_SIZE ? from + newDigests.size() : total);
       for (int to = from + newDigests.size(), i = from; i < to; i++) {
         results.set(i, newDigests.get(i - from));
-        fireOnDigestReady(i, getDigest(i));
       }
+      fireOnTotalChanged(total);
       fireOnStateChanged();
     }
   }
