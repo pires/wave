@@ -89,6 +89,16 @@ public final class ParticipantId implements Comparable<ParticipantId>, Serializa
   }
 
   /**
+   * @return the name in the address. If no "@" occurs, it will be the
+   *         whole string, if more than one occurs, it will be the part before
+   *         the last "@".
+   */
+  public String getName() {
+    String[] parts = address.split(DOMAIN_PREFIX);
+    return parts[0];
+  }
+
+  /**
    * @return the domain name in the address. If no "@" occurs, it will be the
    *         whole string, if more than one occurs, it will be the part after
    *         the last "@".
@@ -117,6 +127,19 @@ public final class ParticipantId implements Comparable<ParticipantId>, Serializa
   @Override
   public String toString() {
     return getAddress();
+  }
+
+  /**
+   * Constructs a {@link ParticipantId} with the supplied name and domain.
+   *
+   * @param name the name of participant.
+   * @param domain the domain of participant.
+   * @return an instance of {@link ParticipantId} constructed using the given
+   *         address.
+   * @throws InvalidParticipantAddress if the validation on the address fails.
+   */
+  public static ParticipantId of(String name, String domain) throws InvalidParticipantAddress {
+    return ParticipantId.of(name + ParticipantId.DOMAIN_PREFIX + domain);
   }
 
   /**
