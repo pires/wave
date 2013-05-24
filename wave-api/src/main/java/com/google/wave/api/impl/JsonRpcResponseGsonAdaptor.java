@@ -1,16 +1,20 @@
-/* Copyright (c) 2009 Google Inc.
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ *   http://www.apache.org/licenses/LICENSE-2.0
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
  */
 
 package com.google.wave.api.impl;
@@ -22,7 +26,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
-import com.google.gson.reflect.TypeToken;
+
 import com.google.wave.api.JsonRpcResponse;
 import com.google.wave.api.JsonRpcConstant.ParamsProperty;
 import com.google.wave.api.JsonRpcConstant.ResponseProperty;
@@ -66,11 +70,15 @@ public class JsonRpcResponseGsonAdaptor implements JsonDeserializer<JsonRpcRespo
         Object object = null;
         if (parameterType == ParamsProperty.BLIPS) {
           object = context.deserialize(parameter.getValue(), GsonFactory.BLIP_MAP_TYPE);
-        } else if (parameterType == ParamsProperty.PARTICIPANTS_ADDED || 
+        } else if (parameterType == ParamsProperty.PARTICIPANTS_ADDED ||
             parameterType == ParamsProperty.PARTICIPANTS_REMOVED) {
           object = context.deserialize(parameter.getValue(), GsonFactory.PARTICIPANT_LIST_TYPE);
         } else if (parameterType == ParamsProperty.THREADS) {
           object = context.deserialize(parameter.getValue(), GsonFactory.THREAD_MAP_TYPE);
+        } else if (parameterType == ParamsProperty.WAVELET_IDS) {
+          object = context.deserialize(parameter.getValue(), GsonFactory.WAVELET_ID_LIST_TYPE);
+        } else if (parameterType == ParamsProperty.RAW_DELTAS) {
+          object = context.deserialize(parameter.getValue(), GsonFactory.RAW_DELTAS_TYPE);
         } else {
           object = context.deserialize(parameter.getValue(), parameterType.clazz());
         }
