@@ -46,6 +46,17 @@
             </configuration>
           </execution>
           <execution>
+            <id>AttachmentProto</id>
+            <phase>generate-sources</phase>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <configuration>
+              <mainClass>org.waveprotocol.pst.PstMain</mainClass>
+              <commandlineArgs>-s pst -d ${genFolder} -f org.waveprotocol.box.attachment.AttachmentProto ${templates}</commandlineArgs>
+            </configuration>
+          </execution>
+          <execution>
             <id>SearchProto</id>
             <phase>generate-sources</phase>
             <goals>

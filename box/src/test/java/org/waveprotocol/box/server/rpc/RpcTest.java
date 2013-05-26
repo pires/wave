@@ -71,7 +71,7 @@ public class RpcTest extends TestCase {
      */
     server =
         new ServerRpcProvider(new InetSocketAddress[] {new InetSocketAddress("localhost", 0)}, 0,
-            new String[] {"./war"}, sessionManager, null, null, false, null, null);
+            new String[] {"../wiab-distribution/src/main/war"}, sessionManager, null, null, false, null, null);
     Injector injector = Guice.createInjector(new AbstractModule() {
       @Override
       protected void configure() {

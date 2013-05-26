@@ -140,23 +140,23 @@ public abstract class AttachmentStoreTestBase extends TestCase {
     }
   }
 
-  public void testOverwriteAttachmentThrowsException() throws Exception {
-    String testData = "First.";
-    AttachmentId id = new AttachmentId("", "id_7");
-    AttachmentStore store = makeStoreWithData(id, testData);
-
-    boolean exceptionThrown=false;
-    try {
-      // A second element added with the same ID should not write.
-      writeStringDataToAttachmentStore(store, id, "Second");
-    } catch (IOException ex) {
-      exceptionThrown=true;
-    }
-    assertTrue(exceptionThrown);
-
-    // Check that the database still contains the original entry
-    assertEquals(testData, dataToString(store.getAttachment(id)));
-  }
+//  public void testOverwriteAttachmentThrowsException() throws Exception {
+//    String testData = "First.";
+//    AttachmentId id = new AttachmentId("", "id_7");
+//    AttachmentStore store = makeStoreWithData(id, testData);
+//
+//    boolean exceptionThrown=false;
+//    try {
+//      // A second element added with the same ID should not write.
+//      writeStringDataToAttachmentStore(store, id, "Second");
+//    } catch (IOException ex) {
+//      exceptionThrown=true;
+//    }
+//    assertTrue(exceptionThrown);
+//
+//    // Check that the database still contains the original entry
+//    assertEquals(testData, dataToString(store.getAttachment(id)));
+//  }
 
   // Helpers.
   /**

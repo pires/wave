@@ -105,6 +105,8 @@
                 </macrodef>
                 <mkdir dir="${gen.dir}" />
                 <protoc
+                  proto="${src.dir}/org/waveprotocol/box/attachment/attachment.proto" />
+                <protoc
                   proto="${src.dir}/org/waveprotocol/box/common/comms/waveclient-rpc.proto" />
                 <protoc
                   proto="${src.dir}/org/waveprotocol/box/profile/profiles.proto" />

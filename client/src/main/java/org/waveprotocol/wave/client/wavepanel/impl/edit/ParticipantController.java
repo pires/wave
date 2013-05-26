@@ -27,8 +27,8 @@ import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.event.dom.client.ClickHandler;
 import com.google.gwt.user.client.Window;
 
-import org.waveprotocol.box.webclient.client.ClientEvents;
-import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
+//import org.waveprotocol.box.webclient.client.ClientEvents;
+//import org.waveprotocol.box.webclient.client.events.WaveCreationEvent;
 import org.waveprotocol.wave.client.account.Profile;
 import org.waveprotocol.wave.client.account.ProfileManager;
 import org.waveprotocol.wave.client.common.safehtml.EscapeUtils;
@@ -170,8 +170,8 @@ public final class ParticipantController {
         if (popup != null) {
           popup.hide();
         }
-        ClientEvents.get().fireEvent(
-            new WaveCreationEvent(participants));
+//        ClientEvents.get().fireEvent(
+//            new WaveCreationEvent(participants));
       }
 
       @Override
