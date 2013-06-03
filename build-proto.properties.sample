@@ -1,6 +1,12 @@
 # Path to the unpacked and compiled protoc distribution
 # Ubuntu/Linux Mint with protobuf-compiler installed
-# protoc_dist=/usr
+# protoc_dist=/usr/bin
+# protoc_executable_name=protoc
 
 # Mac OS X with protobuf installed with brew
-# protoc_dist=/usr/local/Cellar/protobuf/2.4.1
+# protoc_dist=/usr/local/Cellar/protobuf/2.4.1/bin
+# protoc_executable_name=protoc
+
+# Windows with protoc.exe extracted into c:\protoc-2.5.0-win32 folder.
+# protoc_dist=C:\\protoc-2.5.0-win32
+# protoc_executable_name=protoc.exe
