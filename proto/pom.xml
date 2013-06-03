@@ -67,7 +67,7 @@
                 </requireProperty>
                 <requireFilesExist>
                   <files>
-                    <file>${protoc_dist}/bin/protoc</file>
+                    <file>${protoc_dist}/${protoc_executable_name}</file>
                   </files>
                   <message>Couldn't find protoc executable at ${protoc_dist}.</message>
                 </requireFilesExist>
@@ -86,7 +86,7 @@
               <target>
                 <property name="src.dir" value="${basedir}/src/main/proto" />
                 <property name="gen.dir" value="${project.build.directory}/generated-sources" />
-                <property name="protoc" value="protoc" />
+                <property name="protoc" value="${protoc_dist}/${protoc_executable_name}" />
                 <!-- Macros. -->
                 <macrodef
                   name="protoc"
