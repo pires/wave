@@ -21,6 +21,11 @@ On Mac OS X (with _brew_) execute:
 brew install protobuf
 ```
 
+On Windows :
+```
+Download the protobuf from https://code.google.com/p/protobuf/ and extract the protoc.exe
+```
+
 And then edit _build-proto.properties_ to match your installation.
 
 ## Build ##
