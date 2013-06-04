@@ -7,7 +7,7 @@ This way, one expects the project to be easier to understand and faster to build
 ## Prerequisites ##
 - JDK 6
 - Maven 3.0.3 or newer
-- Protocol Buffers compiler installed (_protoc_)
+- Protocol Buffers **2.4.1** compiler installed (_protoc_)
 
 ### Install Protocol Buffers compiler ###
 
@@ -18,7 +18,12 @@ sudo apt-get install protobuf-compiler
 
 On Mac OS X (with _brew_) execute:
 ```
+cd /usr/local
+git l -- Library/Formula/protobuf.rb
+git co -b proto241 544209f
 brew install protobuf
+git co master
+git br -d proto241
 ```
 
 On Windows :
@@ -33,13 +38,13 @@ And then edit _build-proto.properties_ to match your installation.
 Basically, if you want a WIAB JAR file ready to run, you just have to run the following command:
 _mvn clean package_
 
-This will at some point:
+This will eventually:
 - Compile _protobuf_ source files (*.proto) into Java code;
 - Compile a _string-template_ parser;
 - Run that parser against template files (*.st) in order to generate more Java code;
 - Compile GXP templates;
 - Compile GWT modules;
-- Create the runnable JAR.
+- Create the runnable server JAR.
 
 Meanwhile, some tests will be executed, while others won't mostly due to the fact they take too long to run, sometimes even hours. *Be aware!!*
 In order to execute them, we provide the following Maven parameters:
