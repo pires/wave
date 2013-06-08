@@ -28,6 +28,20 @@ Download the protobuf from https://code.google.com/p/protobuf/ and extract the p
 
 And then edit _build-proto.properties_ to match your installation.
 
+## Java memory options for Maven ##
+
+To allow more memory for the compilation process please do the following
+On Linux/Mac :
+```
+export MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=128m"
+```
+
+On Windows :
+
+```
+set MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=128m"
+```
+
 ## Build ##
 
 Basically, if you want a WIAB JAR file ready to run, you just have to run the following command:
