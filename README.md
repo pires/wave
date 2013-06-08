@@ -28,7 +28,7 @@ Download the protobuf from https://code.google.com/p/protobuf/ and extract the p
 
 And then edit _build-proto.properties_ to match your installation.
 
-## Java memory options for Maven ##
+### Java memory options for Maven ###
 
 To allow more memory for the compilation process please do the following
 On Linux/Mac :
